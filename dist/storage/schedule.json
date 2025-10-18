@@ -1,0 +1,53 @@
+{
+    "records": [],
+    "schedules": {
+        "error-log-clear": {
+            "id": "error-log-clear",
+            "reoccuring": true,
+            "date": null,
+            "day": null,
+            "hour": "*",
+            "minute": 30,
+            "second": 0,
+            "taskType": "clearErrorLog",
+            "data": {},
+            "active": true
+        },
+        "clear-auth-db": {
+            "id": "clear-auth-db",
+            "reoccuring": true,
+            "date": null,
+            "day": null,
+            "hour": "*/12",
+            "minute": 0,
+            "second": 0,
+            "taskType": "clearAuthDb",
+            "data": "{\"iv\":\"cHgVK7qtE3WKPaN6uNmjWw==\",\"v\":1,\"iter\":10000,\"ks\":128,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"salt\":\"s5HIiizJrTQ=\",\"ct\":\"ZAzc2l6tYuiAPw==\"}",
+            "active": true
+        },
+        "point-to-balance-job": {
+            "id": "point-to-balance-job",
+            "reoccuring": true,
+            "date": null,
+            "day": "monday",
+            "hour": "20",
+            "minute": "30",
+            "second": "0",
+            "taskType": "runPointToBalance",
+            "data": {},
+            "active": true
+        },
+        "db-init-task": {
+            "id": "db-init-task",
+            "reoccuring": true,
+            "date": null,
+            "day": null,
+            "hour": "23",
+            "minute": "55",
+            "second": "0",
+            "taskType": "init",
+            "data": {},
+            "active": true
+        }
+    }
+}

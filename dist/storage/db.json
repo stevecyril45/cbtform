@@ -1,0 +1,24 @@
+{
+  "records": [
+    {
+      "name": "cards",
+      "unique": []
+    },
+    {
+      "name": "donations",
+      "unique": []
+    },
+    {
+      "name": "partners",
+      "unique": []
+    },
+    {
+      "name": "transactions",
+      "unique": []
+    },
+    {
+      "name": "warehouse",
+      "unique": []
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+type TxStatus = 'pending' | 'success' | 'failed' | 'cancelled';
+
+
+export interface Transaction {
+  id?: string;
+  reference?: string;
+  currency?: string;
+  account?: string;
+  action?: string;
+  trans?: string;
+  status?: TxStatus;
+  message?: string;
+  transaction?: string;
+  description?: string;
+  trxref?: string;
+  privateHash?: string;
+  publicHash?: string;
+  type?: string;
+  user_agent?: string;
+  deviceOrientation?: string;
+  os?: string;
+  osVersion?: string;
+  browserVersion?: string;
+  browser?: string;
+  views?: string;
+  userId?: string;
+  amount?: string;
+  metadata?: any;
+  return?: string;
+  redirecturl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  token?: string;
+  fullName?: string;
+  cardType?: string;
+  acceptedAt?: string;
+  address?: string;
+  paymentMethod?: string;
+  blockHash?: string;
+  blockNumber?: number;
+  contractAddress?: string | null;
+  cumulativeGasUsed?: number;
+  effectiveGasPrice?: number;
+  from?: string;
+  gasUsed?: number;
+  logs?: any[];
+  logsBloom?: string;
+  to?: string;
+  transactionIndex?: number;
+  transactionType?: string;
+}
