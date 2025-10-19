@@ -5,6 +5,7 @@
     "ng": "ng",
     "init": "npm i --legacy-peer-deps --no-optional && cd ./dist && npm run init",
     "start": "node start-dev.js",
+    "lunch": "cd ./dist && npm run start",
     "watch": "ng build --watch --aot --configuration development",
     "watchpro": "ng build --watch --aot --configuration production",
     "serve": "cd ./dist && npm run start",
