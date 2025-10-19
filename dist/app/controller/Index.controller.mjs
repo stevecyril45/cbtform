@@ -4,7 +4,6 @@ import DonationController from "./Donation.controller.mjs";
 import PartnerController from "./Partner.controller.mjs";
 import TransactionController from "./Transaction.controller.mjs";
 import WarehouseController from "./Warehouse.controller.mjs";
-import WarehouseController from "./Warehouse.controller.mjs";
 
 export const controllers=  {
   card: CardController,
