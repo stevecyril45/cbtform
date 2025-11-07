@@ -5,6 +5,7 @@
   "main": "loader.cjs",
   "scripts": {
     "init": "npm i --legacy-peer-deps --no-optional && npm run env",
+    "ssl": "cd ./ssl && run-generate.bat",
     "env": "copy .envclone .env || cp .envclone .env",
     "start": "node loader.cjs",
     "gitdeploy": "git add .;git commit -m 'deploying build';git push;",

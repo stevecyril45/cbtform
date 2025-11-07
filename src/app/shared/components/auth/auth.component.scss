@@ -1,0 +1,47 @@
+.modal-content {
+  background: white;
+  border-radius: 4px;
+  height: 100%;
+}  
+:host ::ng-deep .cdk-overlay-pane.custom-dialog-pane {
+  width: 100% !important;
+  max-width: 95vw !important; /* Allow modal to fit mobile screens */
+  min-width: unset !important; /* Remove any minimum width constraints */
+  background-color: white !important; /* Override pink-bluegrey.css */
+  border-radius: 8px !important;
+}
+
+/* Ensure modal content is responsive */
+.custom-modal {
+  background-color: white !important;
+  border: 1px solid #000 !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #000;
+  padding: 0 10px;
+}
+
+.close-btn:hover {
+  color: #dc3545;
+}
+
+/* Ensure iframe content scales on mobile */
+:host ::ng-deep .cdk-overlay-pane.custom-dialog-pane .mat-dialog-container {
+  padding: 0 !important;
+  overflow: auto !important; /* Allow scrolling if needed */
+}

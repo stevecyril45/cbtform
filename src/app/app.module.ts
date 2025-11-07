@@ -14,6 +14,8 @@ import { UrlCachingInterceptor } from './shared/interceptors/url-caching.interce
 import { HeaderInterceptor } from './shared/interceptors/header.interceptor';
 import { LoaderInterceptor } from './shared/interceptors/loader.interceptor';
 import { MatIconModule } from '@angular/material/icon';
+import { IpInterceptor } from './shared/interceptors/ip.interceptor';
+import { AuthInterceptor } from './shared/interceptors/auth.interceptor';
 
 
 @NgModule({
@@ -34,6 +36,8 @@ import { MatIconModule } from '@angular/material/icon';
     { provide: HTTP_INTERCEPTORS, useClass: DeviceInfoInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: UrlCachingInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: IpInterceptor, multi: true },
+    // { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }, // uncomment if needed
     // { provide: HTTP_INTERCEPTORS, useClass: LoaderInterceptor, multi: true },
   ],
   bootstrap: [AppComponent]

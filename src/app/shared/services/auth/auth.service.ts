@@ -1,485 +1,284 @@
 import { Injectable } from '@angular/core';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { ScriptsService } from '../client/scripts.service';
-import { DeviceService } from '../client/device.service';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { tap, catchError } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
+import sjcl from "sjcl";
+
+const API_BASE_URL = environment.authUrl + "/api"; // Adjust to your backend URL as needed
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  // BehaviorSubject for login type (traditional or blockchain)
-  private _loginType: BehaviorSubject<'traditional' | 'blockchain'> = new BehaviorSubject<'traditional' | 'blockchain'>('traditional');
-  private loginType$: Observable<'traditional' | 'blockchain'> = this._loginType.asObservable();
+  private readonly API_BASE_URL = API_BASE_URL // Moved inside class as private readonly
 
-  // BehaviorSubject for auth state (true/false)
-  private _authState: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
-  private authState$: Observable<boolean> = this._authState.asObservable();
+  private readonly TOKEN_KEY = 'auth_token'; // Key for localStorage
+  private tokenSubject = new BehaviorSubject<string | null>(null);
+  public token$: Observable<string | null> = this.tokenSubject.asObservable();
 
-  // BehaviorSubject for apiKey
-  private _apiKey: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
-  public apiKey$: Observable<string | null> = this._apiKey.asObservable();
+  // ID state management
+  private idSubject = new BehaviorSubject<string | null>(null);
+  public id$: Observable<string | null> = this.idSubject.asObservable();
 
-  // BehaviorSubject for token
-  private _token: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
-  public token$: Observable<string | null> = this._token.asObservable();
-
-  // BehaviorSubject for parentUrl
-  private _parentUrl: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
-  public parentUrl$: Observable<string | null> = this._parentUrl.asObservable();
-
-  // Subjects for auth and user data
-  private _auth: BehaviorSubject<any> = new BehaviorSubject(null);
-  private _user: BehaviorSubject<any> = new BehaviorSubject(null);
-  user: Observable<any> = this._user.asObservable();
-
-  private readonly baseUrl: string = environment.api;
+  // ID state management
+  private balanceSubject = new BehaviorSubject<number | null>(null);
+  public balance$: Observable<number | null> = this.balanceSubject.asObservable();
 
   constructor(
-    private scriptService: ScriptsService,
-    private deviceService: DeviceService,
     private http: HttpClient
   ) {
-    // Initialize auth state and restore session
-    this.restoreSession();
+    // Initialize the subject with the token from localStorage on service creation
+    const savedToken = this.getTokenFromStorage();
+    this.tokenSubject.next(savedToken);
   }
 
-  // Public method to set parentUrl
-  public setParentUrl(parentUrl: string | null): void {
-    this._parentUrl.next(parentUrl);
-    this.saveSession();
+  /**
+   * Saves the ID to the in-memory observable.
+   * @param id The ID to save.
+   */
+  setBalance(balance: number): void {
+    this.balanceSubject.next(balance);
   }
 
-  // Public method to get parentUrl
-  public getParentUrl(): string | null {
-    return this._parentUrl.getValue();
+  /**
+   * Retrieves the current ID. Checks the in-memory observable.
+   * @returns The current ID or null if none exists.
+   */
+  getBalance(): number | null {
+    return this.balanceSubject.value;
   }
-  sendAuthResult(result: { success: boolean; token?: string; user?: any; reason?: string }): void {
-    const parentUrl = this.getParentUrl() || '*';
-    window.parent.postMessage(
-      { type: 'AUTH_RESULT', result },
-      parentUrl
+  /**
+   * Saves the ID to the in-memory observable.
+   * @param id The ID to save.
+   */
+  setId(id: string): void {
+    this.idSubject.next(id);
+  }
+
+  /**
+   * Retrieves the current ID. Checks the in-memory observable.
+   * @returns The current ID or null if none exists.
+   */
+  getId(): string | null {
+    return this.idSubject.value;
+  }
+
+  hashFnv32a(str: string, asString: boolean, seed?: number | string) {
+    /*jshint bitwise:false */
+    var i, l,
+      hval: number;
+
+    if (seed === undefined) {
+      hval = 0x811c9dc5;
+    } else if (typeof seed === 'string') {
+      // Convert hex string seed to 32-bit number using first 8 characters
+      hval = parseInt(seed.substring(0, 8), 16) >>> 0;
+    } else {
+      hval = seed;
+    }
+
+    for (i = 0, l = str.length; i < l; i++) {
+      hval ^= str.charCodeAt(i);
+      hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
+    }
+    if (asString) {
+      // Convert to 8 digit hex string
+      return ("0000000" + (hval >>> 0).toString(16)).substr(-8);
+    }
+    return hval >>> 0;
+  }
+
+  hashSha256(data: any) {
+    let dataBit = sjcl.hash.sha256.hash(data);
+    let dataHash = sjcl.codec.hex.fromBits(dataBit);
+    return dataHash;
+  }
+ 
+  id(email: string) {
+    let name = "AFRO GIFT";
+    let publicKey = this.hashSha256(name);
+    let date = '1960/10/01';
+    let time = '00:00:01';
+    const a = this.hashFnv32a(date, true, publicKey)
+    const b = this.hashFnv32a(date, false, publicKey)
+    const c = this.hashFnv32a(time, true, publicKey)
+    const d = this.hashFnv32a(time, false, publicKey)
+    const e = this.hashFnv32a(name, true, publicKey)
+    const f = this.hashFnv32a(name, false, publicKey)
+    const g = this.hashSha256(`${a},${b}`);
+    const h = this.hashSha256(`${b},${a}`);
+    const i = this.hashSha256(`${a},${c}`);
+    const j = this.hashSha256(`${c},${a}`);
+    const k = this.hashSha256(`${b},${c}`);
+    const l = this.hashSha256(`${c},${b}`);
+    const m = this.hashSha256(`${c},${d}`);
+    const n = this.hashSha256(`${d},${c}`);
+    const o = this.hashSha256(`${d},${e}`);
+    const p = this.hashSha256(`${e},${d}`);
+    const q = this.hashSha256(`${e},${f}`);
+    const r = this.hashSha256(`${f},${e}`);
+    const s = this.hashSha256(`${f},${g}`);
+    const ss = this.hashSha256(`${g},${f}`);  // Completing the pattern with the reverse for the extra cross
+    const t = this.hashSha256(g);
+    const u = this.hashSha256(h);
+    const v = this.hashSha256(i);
+    const w = this.hashSha256(j);
+    const x = this.hashSha256(k);
+    const y = this.hashSha256(l);
+    const z = this.hashSha256(m);
+    const Z = this.hashSha256(n);
+    const Y = this.hashSha256(o);
+    const X = this.hashSha256(p);
+    const W = this.hashSha256(q);
+    const V = this.hashSha256(r);
+    const U = this.hashSha256(s);
+    const UU = this.hashSha256(ss);  // Hash for the completed extra reverse
+
+    // Continuing the second-level pattern with pairwise encrypts (forward/reverse) on consecutive hashed values,
+    // mirroring the first-level structure and extending symmetrically for remaining groups
+    const T = this.hashSha256(`${t},${u}`);
+    const S = this.hashSha256(`${u},${t}`);
+    const R = this.hashSha256(`${u},${v}`);
+    const Q = this.hashSha256(`${v},${u}`);
+    const P = this.hashSha256(`${v},${w}`);
+    const O = this.hashSha256(`${w},${v}`);
+    const N = this.hashSha256(`${w},${x}`);
+    const M = this.hashSha256(`${x},${w}`);
+    const L = this.hashSha256(`${x},${y}`);
+    const K = this.hashSha256(`${y},${x}`);
+    const J = this.hashSha256(`${y},${z}`);
+    const I = this.hashSha256(`${z},${y}`);
+    const H = this.hashSha256(`${z},${Z}`);
+    const G = this.hashSha256(`${Z},${z}`);
+    const F = this.hashSha256(`${Z},${Y}`);
+    const E = this.hashSha256(`${Y},${Z}`);
+    const D = this.hashSha256(`${Y},${X}`);
+    const C = this.hashSha256(`${X},${Y}`);
+    const B = this.hashSha256(`${X},${W}`);
+    const A = this.hashSha256(`${W},${X}`);
+    const ZZ = this.hashSha256(`${W},${V}`);
+    const YY = this.hashSha256(`${V},${W}`);
+    const XX = this.hashSha256(`${V},${U}`);
+    const WW = this.hashSha256(`${U},${V}`);
+    const VV = this.hashSha256(`${V},${t}`);  // Extra cross mirroring s: last name-derived (V from r f-e) to first date-internal-derived (t from g a-b)
+    const TT = this.hashSha256(`${t},${V}`);  // Reverse for the extra cross
+
+    const alphabet = `${a}${b}${c}${d}${e}${f}${g}${h}${i}${j}${k}${l}${m}${n}${o}${p}${q}${r}${s}${ss}${t}${u}${v}${w}${x}${y}${z}${Z}${Y}${X}${W}${V}${U}${UU}${T}${S}${R}${Q}${P}${O}${N}${M}${L}${K}${J}${I}${H}${G}${F}${E}${D}${C}${B}${A}${ZZ}${YY}${XX}${WW}${VV}${TT}`;
+
+    return `A${this.hashSha256(this.hashSha256(`${this.hashSha256(alphabet)},${email}`))}G`;
+  }
+
+  contract(email:string){
+    return `A${this.hashFnv32a(email,true,this.id(email))}G`;
+  }
+
+  create(
+    email: string,
+    dob: string
+  ): Observable<{
+    message: string;
+    result: {
+      contract: string;
+      usage: number;
+      status: string;
+      message: string;
+    };
+  }> {
+    const generatedId = this.id(email);
+    const payload = { email, dob, id: generatedId };
+    return this.http.post<{
+      message: string;
+      result: {
+        contract: string;
+        usage: number;
+        status: string;
+        message: string;
+      };
+    }>(`${API_BASE_URL}/transaction`, payload).pipe(
+      tap(() => this.setId(generatedId))
     );
   }
 
-  // Public method to set apiKey
-  public setApiKey(apiKey: string | null): void {
-    this._apiKey.next(apiKey);
-    this.saveSession();
+  /**
+   * Saves the token to localStorage and updates the in-memory observable.
+   * @param token The authentication token to save.
+   */
+  setToken(token: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    this.tokenSubject.next(token);
   }
 
-  // Public method to set token
-  public setToken(token: string | null): void {
-    this._token.next(token);
-    this._auth.next({ ...this._auth.getValue(), token });
-    this.saveSession();
-    this._authState.next(!!token);
+  /**
+   * Retrieves the current token. First checks the in-memory observable, falls back to localStorage if needed.
+   * @returns The current token or null if none exists.
+   */
+  getToken(): string | null {
+    return this.tokenSubject.value || this.getTokenFromStorage();
   }
 
-  // Methods for login type
-  setLoginType(type: 'traditional' | 'blockchain'): void {
-    this._loginType.next(type);
-    this.saveSession();
+  /**
+   * Clears the token from localStorage and updates the in-memory observable to null.
+   */
+  clearToken(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+    sessionStorage.clear();
+    localStorage.clear();
+    this.balanceSubject.next(null);
+    this.idSubject.next(null);
+    this.tokenSubject.next(null);
   }
 
-  getLoginType(): 'traditional' | 'blockchain' {
-    return this._loginType.getValue();
-  }
-
-  getLoginTypeObservable(): Observable<'traditional' | 'blockchain'> {
-    return this.loginType$;
-  }
-
-  // Methods for auth state
-  setAuthState(state: boolean): void {
-    this._authState.next(state);
-    this.saveSession();
-  }
-
-  getAuthState(): boolean {
-    return this._authState.getValue();
-  }
-
-  getAuth(): any {
-    return this._auth.getValue();
-  }
-
-  getAuthStateObservable(): Observable<boolean> {
-    return this.authState$;
-  }
-
-  // Helper method to create headers with apiKey and token
-  private createHeaders(): HttpHeaders {
-    let headers = new HttpHeaders();
-    const token = this._token.getValue();
-    const apiKey = this._apiKey.getValue();
-    console.log(token);
-    console.log(apiKey);
-
-    if (token) {
-      headers = headers.set('Authorization', `Bearer ${token}`);
-    }
-    if (apiKey) {
-      headers = headers.set('apiKey', apiKey);
+  verify(): Observable<{ valid: boolean }> {
+    const token = this.getTokenFromStorage();
+    if (!token) {
+      // If no token, immediately return invalid without HTTP call
+      return of({ valid: false });
     }
 
-    return headers;
-  }
-
-  revokeApi(data: any): Observable<any> {
-    return this.http
-      .post(`${this.baseUrl}/revoke-api`, data, {
-        headers: this.createHeaders(),
-        params: new HttpParams(),
-      })
-      .pipe(
-        catchError(error => this.handleError(error))
-      );
-  }
-
-  register(data: any): Observable<any> {
-    return this.http
-      .post(`${this.baseUrl}/sign-up`, data, {
-        headers: this.createHeaders(),
-        params: new HttpParams(),
-      })
-      .pipe(
-        catchError(error => this.handleError(error))
-      );
-  }
-
-  login(data: any): Observable<any> {
-    return this.http
-      .post(`${this.baseUrl}/sign-in`, data, {
-        headers: this.createHeaders(),
-        params: new HttpParams(),
-      })
-      .pipe(
-        catchError(error => this.handleError(error)),
-        tap((res: any) => {
-          this._user.next(res.data);
-          this._auth.next(res.data);
-          this._token.next(res.data?.token || null); // Assuming response includes token
-          this._authState.next(true);
-          this._loginType.next('traditional');
-          this.saveSession();
-        })
-      );
-  }
-
-  requestOtpLogin(data: any): Observable<any> {
-    return this.http
-      .post(`${this.baseUrl}/otp-request`, data, {
-        headers: this.createHeaders(),
-        params: new HttpParams(),
-      })
-      .pipe(
-        catchError(error => this.handleError(error))
-      );
-  }
-
-  attemptOtpLogin(data: any): Observable<any> {
-    return this.http
-      .post(`${this.baseUrl}/otp-sign-in`, data, {
-        headers: this.createHeaders(),
-        params: new HttpParams(),
-      })
-      .pipe(
-        catchError(error => this.handleError(error)),
-        tap((res: any) => {
-          this._user.next(res.authResult.user);
-          this._auth.next(res.authResult.user);
-          this._token.next(res.authResult.user?.token || null); // Assuming token in response
-          this._authState.next(true);
-          this._loginType.next('traditional');
-          this.saveSession();
-        })
-      );
-  }
-
-  updatePassword(data: any): Observable<any> {
-    return this.http
-      .post(`${this.baseUrl}/update-password`, data, {
-        headers: this.createHeaders(),
-        params: new HttpParams(),
-      })
-      .pipe(
-        catchError(error => this.handleError(error)),
-        tap((res: any) => {
-          this._user.next(res.authResult.user);
-          this._auth.next(res.authResult.user);
-          this._token.next(res.authResult.user?.token || null); // Assuming token in response
-          this._authState.next(true);
-          this._loginType.next('traditional');
-          this.saveSession();
-        })
-      );
-  }
-
-  /**
-   * Retrieves all API websites for the authenticated user.
-   *
-   * Sends a GET request to /api-websites to fetch the user's API records.
-   *
-   * @param data - Not used, included for consistency with other methods.
-   * @returns Observable with the response containing the apis array.
-   */
-  getApiWebsites(data: any): Observable<any> {
-    return this.http
-      .get(`${this.baseUrl}/api-websites`, {
-        headers: this.createHeaders(),
-        params: new HttpParams(),
-      })
-      .pipe(
-        catchError(error => {
-          this.deviceService.oErrorNotification('Error', 'Failed to fetch API websites');
-          return this.handleError(error);
-        })
-      );
-  }
-
-  verifyAndFetchApi(api: string): Observable<any> {
-    let headers = new HttpHeaders();
-    headers = headers.set('apiKey', api);
-    return this.http
-      .get(`${this.baseUrl}/apiis`, {
-        headers,
-        params: new HttpParams(),
-      })
-      .pipe(
-        catchError(error => {
-          this.deviceService.oErrorNotification('Error', 'Failed to fetch API websites');
-          return this.handleError(error);
-        })
-      );
-  }
-
-  /**
-   * Saves a new API website for the authenticated user.
-   *
-   * Sends a POST request to /api-websites with the API data to create a new record.
-   *
-   * @param data - Object containing API details (name, websiteUrl, successUrl, errorUrl, logoUrl, Abv).
-   * @returns Observable with the response containing the updated user record.
-   */
-  saveApiWebsite(data: any): Observable<any> {
-    return this.http
-      .post(`${this.baseUrl}/api-websites`, data, {
-        headers: this.createHeaders(),
-        params: new HttpParams(),
-      })
-      .pipe(
-        catchError(error => {
-          this.deviceService.oErrorNotification('Error', 'Failed to save API website');
-          return this.handleError(error);
-        }),
-        tap((res: any) => {
-          if (res.success && res.user) {
-            this._user.next(res.user);
-            this._auth.next(res.user);
-            this.saveSession();
-          }
-        })
-      );
-  }
-
-  /**
-   * Updates an existing API website for the authenticated user.
-   *
-   * Sends a PATCH request to /api-websites with the index and updated API data.
-   *
-   * @param data - Object containing the index and updated API details (index, name, websiteUrl, etc.).
-   * @returns Observable with the response containing the updated user record.
-   */
-  updateApiWebsite(data: any): Observable<any> {
-    return this.http
-      .patch(`${this.baseUrl}/api-websites`, data, {
-        headers: this.createHeaders(),
-        params: new HttpParams(),
-      })
-      .pipe(
-        catchError(error => {
-          this.deviceService.oErrorNotification('Error', 'Failed to update API website');
-          return this.handleError(error);
-        }),
-        tap((res: any) => {
-          if (res.success && res.user) {
-            this._user.next(res.user);
-            this._auth.next(res.user);
-            this.saveSession();
-          }
-        })
-      );
-  }
-
-  /**
-   * Deletes an API website for the authenticated user.
-   *
-   * Sends a DELETE request to /api-websites with the index of the API record to delete.
-   *
-   * @param data - Object containing the index of the API record to delete.
-   * @returns Observable with the response containing the updated user record.
-   */
-  deleteApiWebsite(data: any): Observable<any> {
-    return this.http
-      .delete(`${this.baseUrl}/api-websites`, {
-        headers: this.createHeaders(),
-        params: new HttpParams(),
-        body: data
-      })
-      .pipe(
-        catchError(error => {
-          this.deviceService.oErrorNotification('Error', 'Failed to delete API website');
-          return this.handleError(error);
-        }),
-        tap((res: any) => {
-          if (res.success && res.user) {
-            this._user.next(res.user);
-            this._auth.next(res.user);
-            this.saveSession();
-          }
-        })
-      );
-  }
-
-  attemptBlockchain(data: any): Observable<any> {
-    return this.http
-      .post(`${this.baseUrl}/web3-sign-in`, data, {
-        headers: this.createHeaders(),
-        params: new HttpParams(),
-      })
-      .pipe(
-        catchError(error => this.handleError(error)),
-        tap((res: any) => {
-          if (res.data && res.data.success) {
-            const user = res.data.user;
-            this._user.next(user);
-            this._auth.next(user);
-            this._token.next(user?.token || null); // Assuming token in response
-            this._authState.next(true);
-            this._loginType.next('blockchain');
-            this.saveSession();
-          }
-        })
-      );
-  }
-
-  store(token: string): void {
-    this.setToken(token); // Use setToken to update token and session
-  }
-
-  getAuthData(): any {
-    const sessionData = this.getSessionData();
-    return sessionData || undefined;
-  }
-
-  isAuth(): boolean {
-    const sessionData = this.getSessionData();
-    if (!sessionData || !sessionData.token) {
-      this._authState.next(false);
-      return false;
-    }
-
-    try {
-      if (sessionData.codeToken) {
-        const codeToken = JSON.parse(this.scriptService.decryptSha256(sessionData.codeToken));
-        const isExpired = Date.now() > (codeToken.timestamp + codeToken.expires);
-
-        if (isExpired) {
-          this.deviceService.oInfoNotification('Session Expired', 'Please login again');
-          this.clear();
-          this._authState.next(false);
-          return false;
+    let params = new HttpParams().set('contract', token); // Use HttpParams to avoid null/type issues
+    return this.http.get<{ valid: boolean }>(`${this.API_BASE_URL}/transaction`, { params }).pipe(
+      tap((response:any)=>{
+        console.log(response);
+        if(response.valid){
+          this.setId(response.valid.address);
+          this.balanceSubject.next(response.valid.balance);
         }
-      }
-
-      this._authState.next(true);
-      return true;
-    } catch (error) {
-      this.clear();
-      this._authState.next(false);
-      return false;
-    }
+      })
+    );
   }
 
-  clear(): void {
-    sessionStorage.removeItem('session');
-    this._user.next(null);
-    this._auth.next(null);
-    this._authState.next(false);
-    this._loginType.next('traditional');
-    this._apiKey.next(null);
-    this._token.next(null);
-    this._parentUrl.next(null);
+  isAdmin(email) {
+    return email === environment.adminAddress
   }
 
-  logout(): void {
-    this.clear();
+  public requestIp(): Observable<string> {
+    return this.http.get<{ ip: string }>(environment.ipApi).pipe(
+      map((data) => data.ip)
+    );
   }
 
-  private saveSession(): void {
-    try {
-      const sessionData = {
-        user: this._user.getValue(),
-        auth: this._auth.getValue(),
-        loginType: this._loginType.getValue(),
-        token: this._token.getValue(),
-        apiKey: this._apiKey.getValue(),
-        parentUrl: this._parentUrl.getValue(),
-        codeToken: this._auth.getValue()?.codeToken
-      };
-      const encryptedSession = this.scriptService.encryptSha256(JSON.stringify(sessionData));
-      sessionStorage.setItem('session', encryptedSession);
-    } catch (error) {
-      console.error('Failed to encrypt and save session:', error);
-      this.deviceService.oErrorNotification('Error', 'Failed to save session');
-    }
+  // Private helper to read from localStorage without triggering observable updates
+  private getTokenFromStorage(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
   }
 
-  private restoreSession(): void {
-    const encryptedSession = sessionStorage.getItem('session');
-    if (!encryptedSession) {
-      this.clear();
-      return;
-    }
-
-    try {
-      const decryptedSession = this.scriptService.decryptSha256(encryptedSession);
-      const sessionData = JSON.parse(decryptedSession);
-
-      this._user.next(sessionData.user || null);
-      this._auth.next(sessionData.auth || null);
-      this._loginType.next(sessionData.loginType || 'traditional');
-      this._apiKey.next(sessionData.apiKey || null);
-      this._token.next(sessionData.token || null);
-      this._parentUrl.next(sessionData.parentUrl || null);
-      this._authState.next(!!sessionData.token);
-    } catch (error) {
-      console.error('Failed to decrypt and restore session:', error);
-      this.deviceService.oErrorNotification('Error', 'Failed to restore session');
-      this.clear();
-    }
+  verifyOTP(otp: number): Observable<{ valid: boolean }> {
+    const id = this.getId();
+    const payload = { id, otp };
+    return this.http.patch<{ valid: boolean }>(
+      `${API_BASE_URL}/transaction`,
+      payload
+    );
   }
 
-  private getSessionData(): any {
-    const encryptedSession = sessionStorage.getItem('session');
-    if (!encryptedSession) {
-      return null;
-    }
-
-    try {
-      const decryptedSession = this.scriptService.decryptSha256(encryptedSession);
-      return JSON.parse(decryptedSession);
-    } catch (error) {
-      console.error('Failed to decrypt session data:', error);
-      this.clear();
-      return null;
-    }
-  }
-
-  private handleError(error: any): Observable<never> {
-    return throwError(() => error);
+  sendAuthResult(result: {
+    success: boolean;
+    token?: string;
+    user?: any;
+    reason?: string;
+  }): void {
+    const parentUrl = '*';
+    window.parent.postMessage({ type: 'AUTH_RESULT', result }, parentUrl);
   }
 }

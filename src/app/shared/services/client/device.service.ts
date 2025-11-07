@@ -17,7 +17,6 @@ declare const $:any;
 })
 export class DeviceService {
   apiUrl: string = environment.api;
-  emailApiUrl: string = environment.emailApi;
   toastOptions: any = {
     timeOut: 10000,
     showProgressBar: true,
@@ -122,13 +121,6 @@ export class DeviceService {
             ...this.listOfNotifications.value
           ]
         )
-      })
-    )
-  }
-  mail(event: any) {
-    return this.http.post(`${this.emailApiUrl}`, event).pipe(
-      tap((evnt:any)=>{
-
       })
     )
   }

@@ -16,13 +16,17 @@ import {IvyCarouselModule} from 'angular-responsive-carousel';
 // Import library module
 import { NgxAudioPlayerModule } from 'ngx-audio-player';
 import {RouterModule} from '@angular/router';
-
+import { AuthComponent } from './components/auth/auth.component';
+import { AuthButtonComponent } from './components/auth-button/auth-button.component';
 @NgModule({
   declarations: [
     ArraySortPipe,
     SearchSortPipe,
     SheduleMomentPipe,
     CustomTimerPipe,
+    AuthComponent,
+    AuthButtonComponent
+
   ],
   imports: [
     CommonModule,
@@ -54,6 +58,8 @@ import {RouterModule} from '@angular/router';
     CustomTimerPipe,
     IvyCarouselModule,
     NgxAudioPlayerModule,
+    AuthComponent,
+    AuthButtonComponent
   ]
 })
 export class SharedModule {

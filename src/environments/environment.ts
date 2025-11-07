@@ -4,21 +4,18 @@
 
 export const environment = {
   production: false,
-  api: 'http://localhost:5050',
-  emailApi: 'https://localhost:5050',
-  uploadApi: 'https://localhost:5050',
-  authURi: 'https://auth.afrogiftcard.com.ng',
-  appName: 'Auth',
-  domain: '@auth.searchforcleaner.com',
-  teegramToken:'',
-  appDomain: 'https://localhost:5050',
+  appDomain: 'https://0.00.000.00:0000',
+  api: 'https://0.00.000.00:0000/api',
   pub_key: "7f2G4iAwNUrJcGe05gNUrJBYZjsGkcAY0LWp9ck0826oA0826wNUrJcAf2G2G4iAnrY0LWp9n",
-  authApi: "926722deb7da24c5588f02b94f5ca98af0cd0ecaef32957370500c690ac88f71",
-  paystack: "pk_test_f928b8d96c6df3d8e0c38ad074218da324a4a996",
-  tawkexternal: "https://tawk.to/chat/68b0244fbe8646192a41984e/1j3o0rllg",
-  marketplace: "https://marketplace.afrogiftcard.com.ng",
-  wallet: "0xC9a7026e65cf937DB824f031aF6Ed030263B130c",
-  infurakey: "fe1059019f144f25a9e2e7c72d06232f"
+  paystack: "",
+  tawkexternal: "",
+  wallet: "",
+  infurakey: "",
+  partnerConnect: 'http://100.85.124.80:1967',
+  adminAddress: 'somtobuchi@gmail.com',
+  ipApi: 'https://ipapi.co/json/',  
+  authUrl: 'https://100.85.124.80:1959'
+
 };
 /*
  * For easier debugging in development mode, you can import the following file

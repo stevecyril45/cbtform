@@ -2,11 +2,9 @@
 # compiled output
 /dist/node_modules
 /dist/public
-/dist/db/public
-/dist/db/connections.json
-/dist/db/data/telegram.json
-/dist/Sparklingv2
+/dist/storage/transactions
 /dist/.git
+/dist/.env
 /dist/*-lock.json
 /tmp
 /out-tsc

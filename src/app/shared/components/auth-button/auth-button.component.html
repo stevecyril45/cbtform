@@ -1,0 +1,25 @@
+<div class="auth-button-container text-white" *ngIf="isLoggedIn; else loginTemplate">
+  <span class="text-white">
+    <strong>Welcome</strong>
+  </span>
+  <button
+    mat-icon-button
+    (click)="logout()"
+    class="signout-btn"
+    matTooltip="Sign Out"
+    aria-label="Sign Out"
+  >
+    <mat-icon>logout</mat-icon>
+    <!-- Alternative emoji: 🚪 -->
+  </button>
+</div>
+
+<ng-template #loginTemplate>
+  <button
+    mat-raised-button
+    (click)="openLoginModal()"
+    class="btn animated-button mb-4 btn bg-white text-primary btn-lg px-4"
+  >
+    <strong>Connect AFRO I.D</strong>
+  </button>
+</ng-template>

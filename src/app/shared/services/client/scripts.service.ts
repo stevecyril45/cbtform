@@ -195,6 +195,9 @@ export class ScriptsService {
   decryptSha256(data:any){
     return sjcl.decrypt(this.key,data);
   }
+  encryptWithKey(key: string, data: any): string {
+    return sjcl.encrypt(key, JSON.stringify(data));
+  }
   validateEmail(email) {
     return String(email)
       .toLowerCase()
