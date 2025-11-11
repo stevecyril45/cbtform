@@ -14,3 +14,4 @@ TG_BOT_SECRET=""
 TG_ADMINS_CHAT_ID=""
 TG_ADMINS_USER_ID=""
 
+SSL_DIR="C:\Users\HP\Documents\seanproject\ztc\masters-project\AG\Agent\dist\ssl"
