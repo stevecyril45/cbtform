@@ -3,6 +3,7 @@
 /dist/node_modules
 /dist/public
 /dist/storage/transactions
+/dist/storage/uploads
 /dist/.git
 /dist/.env
 /dist/*-lock.json

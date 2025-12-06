@@ -18,7 +18,7 @@ const PORT = process.env.PORT || process.env.NODE_ENV;
 const port = JSON.stringify(parseInt(PORT));
 const { __dirname } = fileDirName(import.meta);
 const staticRoot = __dirname + "/public/";
-const staticFileRoot = __dirname + "/storage/public/";
+const staticFileRoot = __dirname + "/storage/uploads/";
 
 // SSL directory: Use SSL_DIR env var if set (shared across projects), otherwise fallback to local ./ssl
 const sslDir = process.env.SSL_DIR ? path.resolve(process.env.SSL_DIR) : path.join(__dirname, 'ssl');
@@ -31,8 +31,8 @@ const api = new Api(app);
 app.set("port", port);
 app.use(fileUpload());
 app.use(busboy());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json({ limit: '20mb' }));        // for JSON
+app.use(express.urlencoded({ limit: '20mb', extended: false }));
 app.use(compression());
 app.use(allowableDomainMiddleware);
 
@@ -42,9 +42,10 @@ app.use(allowableDomainMiddleware);
 
 api._expose();
 /* end of backend routes */
-app.use(serveSpaIndexMiddleware(staticRoot));
+app.use("/storage/uploads",express.static(staticFileRoot));
 app.use(express.static(staticRoot));
-app.use(express.static(staticFileRoot));
+app.use(serveSpaIndexMiddleware(staticRoot));
+
 
 export function start_server() {
   // Check for SSL files

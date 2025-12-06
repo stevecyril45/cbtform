@@ -2,7 +2,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const ALLOWED_DEV_DOMAINS = [
-  'http://localhost:5000',
+  'http://localhost:'+process.env.PORT,
+  "http://" + process.env.IP+":"+process.env.PORT,
+  "https://" + process.env.IP+":"+process.env.PORT
+
 ];
 
 const ALLOWED_PROD_DOMAINS = [];
@@ -12,10 +15,10 @@ const ALLOWED_DOMAINS = isDev ? ALLOWED_DEV_DOMAINS : ALLOWED_PROD_DOMAINS;
 
 export default async function allowableDomainMiddleware(req, res, next) {
   let origin = req.get('origin');
-  // console.log('New Request From Origin:', origin);
+  console.log('New Request From Origin:', origin);
 
   // Collect client_device_* headers from Access-Control-Request-Headers
-  let allowedHeaders = ['Content-Type', 'Authorization', 'auth'];
+  let allowedHeaders = ['Content-Type', 'Authorization', 'auth', 'appaddress','requestedat','accept','token','i','ip','p','t','d','c','a'];
   if (req.get('Access-Control-Request-Headers')) {
     const requestHeaders = req.get('Access-Control-Request-Headers').split(',').map(h => h.trim());
     requestHeaders.forEach(header => {
@@ -57,7 +60,6 @@ export default async function allowableDomainMiddleware(req, res, next) {
       origin = '*';
     }
   }
-
   // Check if the origin is in ALLOWED_DOMAINS (skip for non-browser clients)
   if (origin !== '*' && !ALLOWED_DOMAINS.includes(origin)) {
     // console.log('Forbidden: Origin not allowed:', origin);
@@ -74,13 +76,12 @@ export default async function allowableDomainMiddleware(req, res, next) {
   try {
     // Create auth object
     const auth = {};
-    auth.email = req.get('auth') || 'GUEST';
     for (const header in req.headers) {
       if (header.startsWith('client_device_')) {
         auth[header] = req.headers[header];
       }
     }
-    req.auth = auth;
+    req.device = auth;
 
     next();
   } catch (error) {

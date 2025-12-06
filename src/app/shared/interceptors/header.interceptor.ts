@@ -3,63 +3,98 @@ import {
   HttpRequest,
   HttpHandler,
   HttpEvent,
-  HttpInterceptor
+  HttpInterceptor,
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ScriptsService } from '../services/client/scripts.service';
-import { DeviceService } from '../services/client/device.service';
 import { AuthService } from '../services/auth/auth.service';
 
 @Injectable()
 export class HeaderInterceptor implements HttpInterceptor {
-  constructor(private scriptService: ScriptsService, private deviceService:DeviceService, private authService:AuthService) { }
 
-  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    return this.handleRequest(request, next);
-  }
+  constructor(
+    private scriptService: ScriptsService,
+    private authService: AuthService
+  ) {}
 
-  handleRequest(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    let requestClone = request;
-    // For POST requests, encrypt the body if it exists
-    if ((request.method === 'POST' || request.method === 'PATCH' )&& request.body) {
-      const requestedat = `${Date.now()}`;
-      const appAddress = environment.pub_key;
-      const accept = 'application/json';
-      const origin = environment.appDomain;
-      const token:any = this.authService.getToken();
-      // Set common headers
-      requestClone = requestClone.clone({
-        setHeaders: {
-          requestedat,
-          appAddress,
-          accept,
-          token
-        }
-      });
-      const requestKey = `${appAddress}${requestedat}${accept}${origin}`;
-      console.log(requestKey);
-      // this.deviceService.getIp().subscribe()
-      try {
-        // Assuming body is an object; stringify it first
-        const bodyString = typeof request.body === 'string'
-          ? request.body
-          : JSON.stringify(request.body);
+  intercept(
+    request: HttpRequest<unknown>,
+    next: HttpHandler
+  ): Observable<HttpEvent<unknown>> {
 
-        // Encrypt using SHA256 via ScriptsService
-        const encryptedBody = this.scriptService.encryptWithKey(requestKey, bodyString)
-        console.log(bodyString);
-        console.log(encryptedBody);
-        // Clone again to set the encrypted body
-        requestClone = requestClone.clone({
-          body: {data:encryptedBody}
-        });
-      } catch (error) {
-        console.error('Encryption failed:', error);
-        // Optionally, handle error (e.g., throw or skip encryption)
-      }
+    // Only encrypt/intercept POST and PATCH requests with body
+    if (!request.body || (request.method !== 'POST' && request.method !== 'PATCH')) {
+      return next.handle(request);
     }
 
-    return next.handle(requestClone);
+    const requestedat = Date.now().toString();
+    const appAddress = environment.pub_key;
+    const accept = 'application/json';
+    const origin = environment.appDomain;
+
+    // This key is used to encrypt the body (backend decrypts with same logic)
+    const requestKey = `${appAddress}${requestedat}${accept}${origin}`;
+
+    // Base headers — always sent
+    const baseHeaders: Record<string, string> = {
+      requestedat,
+      appAddress,
+      accept,
+      origin,
+    };
+
+    let modifiedRequest = request;
+
+    // === ADD AUTH HEADERS ONLY IF USER IS AUTHENTICATED ===
+    if (this.authService.isAuthenticated) {
+      console.log('User authenticated → adding auth headers (a, c, d, i, t)');
+
+      Object.assign(baseHeaders, {
+        a: this.authService.a || '',   // Address (email-based ID)
+        c: this.authService.c || '',   // Contract
+        d: this.authService.d || '',   // DOB proof
+        i: this.authService.i || '',   // IP address
+        t: this.authService.t || '',   // Auth timestamp
+      });
+    } else {
+      console.log('User not authenticated → sending without auth headers');
+    }
+
+    // Apply all headers
+    modifiedRequest = request.clone({
+      setHeaders: baseHeaders
+    });
+
+    // === ENCRYPT BODY (even unauthenticated requests can be encrypted) ===
+    try {
+      const rawBody = typeof request.body === 'string'
+        ? request.body
+        : JSON.stringify(request.body);
+
+      const encryptedBody = this.scriptService.encryptWithKey(requestKey, rawBody);
+
+      // Wrap encrypted data in { data: "..." } — this is what your backend expects
+      modifiedRequest = modifiedRequest.clone({
+        body: { data: encryptedBody }
+      });
+
+      console.log('Encrypted request sent →', modifiedRequest.url);
+      if (this.authService.isAuthenticated) {
+        console.table({
+          a: this.authService.a,
+          c: this.authService.c,
+          d: this.authService.d?.substring(0, 16) + '...',
+          i: this.authService.i,
+          t: this.authService.t
+        });
+      }
+
+    } catch (err: any) {
+      console.error('Body encryption failed:', err);
+      return throwError(() => new Error('Request encryption failed: ' + err.message));
+    }
+
+    return next.handle(modifiedRequest);
   }
 }

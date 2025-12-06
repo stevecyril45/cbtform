@@ -1,6 +1,6 @@
 <div class="auth-button-container text-white" *ngIf="isLoggedIn; else loginTemplate">
   <span class="text-white">
-    <strong>Welcome</strong>
+    <strong>👋Welcome Back, <span class="username">{{fakeUsername}} 😊</span></strong>
   </span>
   <button
     mat-icon-button
@@ -20,6 +20,6 @@
     (click)="openLoginModal()"
     class="btn animated-button mb-4 btn bg-white text-primary btn-lg px-4"
   >
-    <strong>Connect AFRO I.D</strong>
+    <strong>Connect Account</strong>
   </button>
 </ng-template>

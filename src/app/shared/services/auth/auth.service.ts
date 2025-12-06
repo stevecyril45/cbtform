@@ -1,125 +1,250 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { BehaviorSubject, Observable, from, of } from 'rxjs';
+import { switchMap, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { map, tap } from 'rxjs/operators';
-import sjcl from "sjcl";
+import sjcl from 'sjcl';
+import { UzorService } from '../encryption/uzor.service';
 
-const API_BASE_URL = environment.authUrl + "/api"; // Adjust to your backend URL as needed
+const API_BASE_URL = environment.authUrl + '/api';
+
+export interface AuthResult {
+  success?: boolean;
+  message?: string;
+  contract?: string;
+  address?: string;
+
+  // New minimal response from backend
+  a?: string;  // address
+  c?: string;  // contract
+  d?: string;  // dob (via UzorService.dob)
+  s?: boolean; // success flag
+  i?: string;  // user IP
+  t?: string;  // timestamp
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_BASE_URL = API_BASE_URL // Moved inside class as private readonly
+  private readonly STORAGE_KEY = 'auth_state_final';
 
-  private readonly TOKEN_KEY = 'auth_token'; // Key for localStorage
-  private tokenSubject = new BehaviorSubject<string | null>(null);
-  public token$: Observable<string | null> = this.tokenSubject.asObservable();
+  // Only the fields we actually use now
+  private _a = new BehaviorSubject<string | null>(null); // address
+  private _c = new BehaviorSubject<string | null>(null); // contract
+  private _d = new BehaviorSubject<string | null>(null); // dob hash
+  private _i = new BehaviorSubject<string | null>(null); // IP
+  private _t = new BehaviorSubject<string | null>(null); // timestamp
+  private _s = new BehaviorSubject<boolean>(false);      // authenticated?
 
-  // ID state management
-  private idSubject = new BehaviorSubject<string | null>(null);
-  public id$: Observable<string | null> = this.idSubject.asObservable();
+  // Public observables
+  public a$: Observable<string | null> = this._a.asObservable();
+  public c$: Observable<string | null> = this._c.asObservable();
+  public d$: Observable<string | null> = this._d.asObservable();
+  public i$: Observable<string | null> = this._i.asObservable();
+  public t$: Observable<string | null> = this._t.asObservable();
+  public isAuthenticated$: Observable<boolean> = this._s.asObservable();
 
-  // ID state management
-  private balanceSubject = new BehaviorSubject<number | null>(null);
-  public balance$: Observable<number | null> = this.balanceSubject.asObservable();
+  // Getters
+  public get a() { return this._a.value; }
+  public get c() { return this._c.value; }
+  public get d() { return this._d.value; }
+  public get i() { return this._i.value; }
+  public get t() { return this._t.value; }
+  public get isAuthenticated() { return this._s.value; }
 
   constructor(
-    private http: HttpClient
+    private http: HttpClient,
+    private uzor: UzorService
   ) {
-    // Initialize the subject with the token from localStorage on service creation
-    const savedToken = this.getTokenFromStorage();
-    this.tokenSubject.next(savedToken);
+    this.loadFromStorage();
   }
 
-  /**
-   * Saves the ID to the in-memory observable.
-   * @param id The ID to save.
-   */
-  setBalance(balance: number): void {
-    this.balanceSubject.next(balance);
+  // === PRIVATE: Fetch real IP ===
+  private getIpWithInternet(): Observable<{ ip: string }> {
+    return this.http.get<{ ip: string }>(environment.ipApi).pipe(
+      switchMap(res => of({ ip: res.ip }))
+    );
   }
 
-  /**
-   * Retrieves the current ID. Checks the in-memory observable.
-   * @returns The current ID or null if none exists.
-   */
-  getBalance(): number | null {
-    return this.balanceSubject.value;
-  }
-  /**
-   * Saves the ID to the in-memory observable.
-   * @param id The ID to save.
-   */
-  setId(id: string): void {
-    this.idSubject.next(id);
+  // === CREATE ACCOUNT (unchanged logic) ===
+  create(email: string, dob: string): Observable<AuthResult> {
+    const generatedAddress = this.id(email);
+
+    return this.getIpWithInternet().pipe(
+      switchMap(({ ip }) => {
+        const data = { email, dob, address: generatedAddress };
+        const encryptedFields: any = {};
+        const originals: string[] = [];
+
+        for (const key in data) {
+          if (data.hasOwnProperty(key)) {
+            const val = String(data[key] ?? 'null');
+            encryptedFields[key] = this.uzor.encode(val).data;
+            originals.push(val);
+          }
+        }
+
+        const masterSecret = originals.join('||UZOR||');
+        const masterProof = this.uzor.encrypt(masterSecret);
+
+        const payload = {
+          ...encryptedFields,
+          _p: masterProof,
+          _h: masterProof.h,
+          _c: masterProof.c,
+          _pr: Object.keys(data)
+        };
+
+        return this.http.post<AuthResult>(`${API_BASE_URL}/transaction`, payload, {
+          headers: { ip }
+        });
+      })
+    );
   }
 
-  /**
-   * Retrieves the current ID. Checks the in-memory observable.
-   * @returns The current ID or null if none exists.
-   */
-  getId(): string | null {
-    return this.idSubject.value;
+  // === VERIFY OTP — Now sets auth state on success ===
+  verifyOTP(email: string, contract: string, otp: string): Observable<AuthResult> {
+    const address = this.id(email);
+
+    return this.getIpWithInternet().pipe(
+      switchMap(({ ip }) => {
+        const reason = 'verifyOTP';
+        const data = { address, contract, reason, otp: otp.toString() };
+        const encryptedFields: any = {};
+        const originals: string[] = [];
+
+        for (const key in data) {
+          const val = String(data[key]);
+          encryptedFields[key] = this.uzor.encode(val).data;
+          originals.push(val);
+        }
+
+        const masterSecret = originals.join('||UZOR||');
+        const masterProof = this.uzor.encrypt(masterSecret);
+
+        const payload = {
+          ...encryptedFields,
+          _p: masterProof,
+          _h: masterProof.h,
+          _c: masterProof.c,
+          _pr: Object.keys(data)
+        };
+
+        return this.http.patch<AuthResult>(`${API_BASE_URL}/transaction`, payload, {
+          headers: { ip }
+        });
+      }),
+      tap((result: any) => {
+        if (result?.success === true) {
+          this.setAuthResult(result.data);
+        }
+      })
+    );
   }
 
-  hashFnv32a(str: string, asString: boolean, seed?: number | string) {
-    /*jshint bitwise:false */
-    var i, l,
-      hval: number;
-
-    if (seed === undefined) {
-      hval = 0x811c9dc5;
-    } else if (typeof seed === 'string') {
-      // Convert hex string seed to 32-bit number using first 8 characters
-      hval = parseInt(seed.substring(0, 8), 16) >>> 0;
-    } else {
-      hval = seed;
+  // === SET AUTH STATE FROM BACKEND RESULT ===
+  setAuthResult(result: AuthResult): void {
+    console.log(result);
+    if (!result?.s) {
+      this.logout();
+      return;
     }
 
-    for (i = 0, l = str.length; i < l; i++) {
-      hval ^= str.charCodeAt(i);
-      hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
-    }
-    if (asString) {
-      // Convert to 8 digit hex string
-      return ("0000000" + (hval >>> 0).toString(16)).substr(-8);
-    }
-    return hval >>> 0;
+    this._a.next(result.a || null);
+    this._c.next(result.c || null);
+    this._d.next(result.d || null);
+    this._i.next(result.i || null);
+    this._t.next(result.t || null);
+    this._s.next(true);
+
+    this.saveToStorage();
+    this.sendAuthResult(result); // Optional: notify parent window (iframe use)
   }
 
-  hashSha256(data: any) {
-    let dataBit = sjcl.hash.sha256.hash(data);
-    let dataHash = sjcl.codec.hex.fromBits(dataBit);
-    return dataHash;
+  // === LOGOUT ===
+  logout(): void {
+    this._a.next(null);
+    this._c.next(null);
+    this._d.next(null);
+    this._i.next(null);
+    this._t.next(null);
+    this._s.next(false);
+    localStorage.removeItem(this.STORAGE_KEY);
+    sessionStorage.clear();
   }
- 
-  id(email: string) {
-    let name = "AFRO GIFT";
-    let publicKey = this.hashSha256(name);
-    let date = '1960/10/01';
-    let time = '00:00:01';
-    const a = this.hashFnv32a(date, true, publicKey)
-    const b = this.hashFnv32a(date, false, publicKey)
-    const c = this.hashFnv32a(time, true, publicKey)
-    const d = this.hashFnv32a(time, false, publicKey)
-    const e = this.hashFnv32a(name, true, publicKey)
-    const f = this.hashFnv32a(name, false, publicKey)
-    const g = this.hashSha256(`${a},${b}`);
-    const h = this.hashSha256(`${b},${a}`);
-    const i = this.hashSha256(`${a},${c}`);
-    const j = this.hashSha256(`${c},${a}`);
-    const k = this.hashSha256(`${b},${c}`);
-    const l = this.hashSha256(`${c},${b}`);
-    const m = this.hashSha256(`${c},${d}`);
-    const n = this.hashSha256(`${d},${c}`);
-    const o = this.hashSha256(`${d},${e}`);
-    const p = this.hashSha256(`${e},${d}`);
-    const q = this.hashSha256(`${e},${f}`);
-    const r = this.hashSha256(`${f},${e}`);
-    const s = this.hashSha256(`${f},${g}`);
-    const ss = this.hashSha256(`${g},${f}`);  // Completing the pattern with the reverse for the extra cross
+
+  // === PERSISTENCE ===
+  private saveToStorage(): void {
+    const state = {
+      a: this._a.value,
+      c: this._c.value,
+      d: this._d.value,
+      i: this._i.value,
+      t: this._t.value,
+      s: this._s.value,
+    };
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
+  }
+
+  private loadFromStorage(): void {
+    const raw = localStorage.getItem(this.STORAGE_KEY);
+    if (!raw) return;
+
+    try {
+      const state = JSON.parse(raw);
+      this._a.next(state.a || null);
+      this._c.next(state.c || null);
+      this._d.next(state.d || null);
+      this._i.next(state.i || null);
+      this._t.next(state.t || null);
+      this._s.next(!!state.s);
+    } catch (e) {
+      console.warn('Corrupted auth state, clearing...');
+      this.logout();
+    }
+  }
+
+  // === CRYPTO HELPERS (unchanged) ===
+  id(email: string): string {
+    const _f = "AFRO"; const father = this.hashSha256(_f);
+    const _s = ' '; const space = this.hashSha256(_s);
+    const _m = "GIFT"; const mother = this.hashSha256(_m);
+    const name = `${father}${space}${mother}`;
+    const publicKey = this.hashSha256(name);
+    const one = this.hashSha256('1');
+    const nine = this.hashSha256('9');
+    const six = this.hashSha256('6');
+    const zero = this.hashSha256('0');
+    const slash = this.hashSha256('/');
+    const col = this.hashSha256(':');
+    const date = `${one}${nine}${six}${zero}${slash}${one}${zero}${slash}${zero}${one}`;
+    const dateHash = this.hashSha256(date);
+    const time = `${zero}${zero}${col}${zero}${zero}${col}${zero}${one}`;
+    const timeHash = this.hashSha256(time);
+    const format = `${publicKey}${space}${dateHash}${space}${timeHash}`;
+
+    const a = this.hashSha256(`${format}a${format}`);
+    const b = this.hashSha256(`${format}b${format}`);
+    const c = this.hashSha256(`${format}c${format}`);
+    const d = this.hashSha256(`${format}d${format}`);
+    const e = this.hashSha256(`${format}e${format}`);
+    const f = this.hashSha256(`${format}f${format}`);
+    const rest = this.hashSha256(`${format}${space}${format}`);
+    const g = this.hashSha256(`${a}${space}${b}`);
+    const h = this.hashSha256(`${b}${space}${a}`);
+    const i = this.hashSha256(`${a}${space}${c}`);
+    const j = this.hashSha256(`${c}${space}${a}`);
+    const k = this.hashSha256(`${b}${space}${c}`);
+    const l = this.hashSha256(`${c}${space}${b}`);
+    const m = this.hashSha256(`${c}${space}${d}`);
+    const n = this.hashSha256(`${d}${space}${c}`);
+    const o = this.hashSha256(`${d}${space}${e}`);
+    const p = this.hashSha256(`${e}${space}${d}`);
+    const q = this.hashSha256(`${e}${space}${f}`);
+    const r = this.hashSha256(`${f}${space}${e}`);
+    const s = this.hashSha256(`${f}${space}${g}`);
+    const ss = this.hashSha256(`${g}${space}${f}`);
     const t = this.hashSha256(g);
     const u = this.hashSha256(h);
     const v = this.hashSha256(i);
@@ -133,152 +258,75 @@ export class AuthService {
     const W = this.hashSha256(q);
     const V = this.hashSha256(r);
     const U = this.hashSha256(s);
-    const UU = this.hashSha256(ss);  // Hash for the completed extra reverse
+    const UU = this.hashSha256(ss);
 
-    // Continuing the second-level pattern with pairwise encrypts (forward/reverse) on consecutive hashed values,
-    // mirroring the first-level structure and extending symmetrically for remaining groups
-    const T = this.hashSha256(`${t},${u}`);
-    const S = this.hashSha256(`${u},${t}`);
-    const R = this.hashSha256(`${u},${v}`);
-    const Q = this.hashSha256(`${v},${u}`);
-    const P = this.hashSha256(`${v},${w}`);
-    const O = this.hashSha256(`${w},${v}`);
-    const N = this.hashSha256(`${w},${x}`);
-    const M = this.hashSha256(`${x},${w}`);
-    const L = this.hashSha256(`${x},${y}`);
-    const K = this.hashSha256(`${y},${x}`);
-    const J = this.hashSha256(`${y},${z}`);
-    const I = this.hashSha256(`${z},${y}`);
-    const H = this.hashSha256(`${z},${Z}`);
-    const G = this.hashSha256(`${Z},${z}`);
-    const F = this.hashSha256(`${Z},${Y}`);
-    const E = this.hashSha256(`${Y},${Z}`);
-    const D = this.hashSha256(`${Y},${X}`);
-    const C = this.hashSha256(`${X},${Y}`);
-    const B = this.hashSha256(`${X},${W}`);
-    const A = this.hashSha256(`${W},${X}`);
-    const ZZ = this.hashSha256(`${W},${V}`);
-    const YY = this.hashSha256(`${V},${W}`);
-    const XX = this.hashSha256(`${V},${U}`);
-    const WW = this.hashSha256(`${U},${V}`);
-    const VV = this.hashSha256(`${V},${t}`);  // Extra cross mirroring s: last name-derived (V from r f-e) to first date-internal-derived (t from g a-b)
-    const TT = this.hashSha256(`${t},${V}`);  // Reverse for the extra cross
+    const T = this.hashSha256(`${t}${space}${u}`);
+    const S = this.hashSha256(`${u}${space}${t}`);
+    const R = this.hashSha256(`${u}${space}${v}`);
+    const Q = this.hashSha256(`${v}${space}${u}`);
+    const P = this.hashSha256(`${v}${space}${w}`);
+    const O = this.hashSha256(`${w}${space}${v}`);
+    const N = this.hashSha256(`${w}${space}${x}`);
+    const M = this.hashSha256(`${x}${space}${w}`);
+    const L = this.hashSha256(`${x}${space}${y}`);
+    const K = this.hashSha256(`${y}${space}${x}`);
+    const J = this.hashSha256(`${y}${space}${z}`);
+    const I = this.hashSha256(`${z}${space}${y}`);
+    const H = this.hashSha256(`${z}${space}${Z}`);
+    const G = this.hashSha256(`${Z}${space}${z}`);
+    const F = this.hashSha256(`${Z}${space}${Y}`);
+    const E = this.hashSha256(`${Y}${space}${Z}`);
+    const D = this.hashSha256(`${Y}${space}${X}`);
+    const C = this.hashSha256(`${X}${space}${Y}`);
+    const B = this.hashSha256(`${X}${space}${W}`);
+    const A = this.hashSha256(`${W}${space}${X}`);
+    const ZZ = this.hashSha256(`${W}${space}${V}`);
+    const YY = this.hashSha256(`${V}${space}${W}`);
+    const XX = this.hashSha256(`${V}${space}${U}`);
+    const WW = this.hashSha256(`${U}${space}${V}`);
+    const VV = this.hashSha256(`${V}${space}${t}`);
+    const TT = this.hashSha256(`${t}${space}${V}`);
 
-    const alphabet = `${a}${b}${c}${d}${e}${f}${g}${h}${i}${j}${k}${l}${m}${n}${o}${p}${q}${r}${s}${ss}${t}${u}${v}${w}${x}${y}${z}${Z}${Y}${X}${W}${V}${U}${UU}${T}${S}${R}${Q}${P}${O}${N}${M}${L}${K}${J}${I}${H}${G}${F}${E}${D}${C}${B}${A}${ZZ}${YY}${XX}${WW}${VV}${TT}`;
+    const alphabet = `${a}${space}${b}${space}${c}${space}${d}${space}${e}${space}${f}${space}${g}${space}${h}${space}${i}${space}${j}${space}${k}${space}${l}${space}${m}${space}${n}${space}${o}${space}${p}${space}${q}${space}${r}${space}${s}${space}${ss}${space}${t}${space}${u}${space}${v}${space}${w}${space}${x}${space}${y}${space}${z}${space}${Z}${space}${Y}${space}${X}${space}${W}${space}${V}${space}${U}${space}${UU}${space}${T}${space}${S}${space}${R}${space}${Q}${space}${P}${space}${O}${space}${N}${space}${M}${space}${L}${space}${K}${space}${J}${space}${I}${space}${H}${space}${G}${space}${F}${space}${E}${space}${D}${space}${C}${space}${B}${space}${A}${space}${ZZ}${space}${YY}${space}${XX}${space}${WW}${space}${VV}${space}${TT}`;
 
-    return `A${this.hashSha256(this.hashSha256(`${this.hashSha256(alphabet)},${email}`))}G`;
+    return this.uzor.hashSha256(`A${rest}${this.hashSha256(this.hashSha256(`${this.hashSha256(alphabet)}${space}${email}`))}${rest}G`);
   }
 
-  contract(email:string){
-    return `A${this.hashFnv32a(email,true,this.id(email))}G`;
+  hashSha256(data: any): string {
+    const bits = sjcl.hash.sha256.hash(data);
+    return sjcl.codec.hex.fromBits(bits);
   }
 
-  create(
-    email: string,
-    dob: string
-  ): Observable<{
-    message: string;
-    result: {
-      contract: string;
-      usage: number;
-      status: string;
-      message: string;
-    };
-  }> {
-    const generatedId = this.id(email);
-    const payload = { email, dob, id: generatedId };
-    return this.http.post<{
-      message: string;
-      result: {
-        contract: string;
-        usage: number;
-        status: string;
-        message: string;
-      };
-    }>(`${API_BASE_URL}/transaction`, payload).pipe(
-      tap(() => this.setId(generatedId))
-    );
-  }
+  hashFnv32a(str: string, asString: boolean, seed?: number | string): any {
+    let hval: number = seed === undefined ? 0x811c9dc5 :
+      (typeof seed === 'string' ? parseInt(seed.substring(0, 8), 16) >>> 0 : seed);
 
-  /**
-   * Saves the token to localStorage and updates the in-memory observable.
-   * @param token The authentication token to save.
-   */
-  setToken(token: string): void {
-    localStorage.setItem(this.TOKEN_KEY, token);
-    this.tokenSubject.next(token);
-  }
-
-  /**
-   * Retrieves the current token. First checks the in-memory observable, falls back to localStorage if needed.
-   * @returns The current token or null if none exists.
-   */
-  getToken(): string | null {
-    return this.tokenSubject.value || this.getTokenFromStorage();
-  }
-
-  /**
-   * Clears the token from localStorage and updates the in-memory observable to null.
-   */
-  clearToken(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    sessionStorage.clear();
-    localStorage.clear();
-    this.balanceSubject.next(null);
-    this.idSubject.next(null);
-    this.tokenSubject.next(null);
-  }
-
-  verify(): Observable<{ valid: boolean }> {
-    const token = this.getTokenFromStorage();
-    if (!token) {
-      // If no token, immediately return invalid without HTTP call
-      return of({ valid: false });
+    for (let i = 0, l = str.length; i < l; i++) {
+      hval ^= str.charCodeAt(i);
+      hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
     }
-
-    let params = new HttpParams().set('contract', token); // Use HttpParams to avoid null/type issues
-    return this.http.get<{ valid: boolean }>(`${this.API_BASE_URL}/transaction`, { params }).pipe(
-      tap((response:any)=>{
-        console.log(response);
-        if(response.valid){
-          this.setId(response.valid.address);
-          this.balanceSubject.next(response.valid.balance);
-        }
-      })
-    );
+    if (asString) {
+      return ("0000000" + (hval >>> 0).toString(16)).substr(-8);
+    }
+    return hval >>> 0;
   }
 
-  isAdmin(email) {
-    return email === environment.adminAddress
+  // Optional: lightweight session check
+  verify(): Observable<{ valid: boolean }> {
+    const contract = this.c;
+    console.log(contract);
+    if (!contract) return of({ valid: false });
+
+    return this.http.get<{ valid: boolean }>(`${API_BASE_URL}/transaction`, {
+      params: new HttpParams().set('contract', contract)
+    });
   }
 
-  public requestIp(): Observable<string> {
-    return this.http.get<{ ip: string }>(environment.ipApi).pipe(
-      map((data) => data.ip)
-    );
+  isAdmin(email: string): boolean {
+    return email === environment.adminAddress;
   }
 
-  // Private helper to read from localStorage without triggering observable updates
-  private getTokenFromStorage(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
-  verifyOTP(otp: number): Observable<{ valid: boolean }> {
-    const id = this.getId();
-    const payload = { id, otp };
-    return this.http.patch<{ valid: boolean }>(
-      `${API_BASE_URL}/transaction`,
-      payload
-    );
-  }
-
-  sendAuthResult(result: {
-    success: boolean;
-    token?: string;
-    user?: any;
-    reason?: string;
-  }): void {
-    const parentUrl = '*';
-    window.parent.postMessage({ type: 'AUTH_RESULT', result }, parentUrl);
+  sendAuthResult(result: AuthResult): void {
+    window.parent.postMessage({ type: 'AUTH_RESULT', result }, '*');
   }
 }

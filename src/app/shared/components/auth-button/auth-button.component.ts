@@ -1,10 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthComponent } from '../auth/auth.component';
 import { AuthService } from '../../services/auth/auth.service';
-import { DeviceService } from '../../services/client/device.service';
-import { Subscription } from 'rxjs';
-import { Router } from '@angular/router';
+import { ScriptsService } from '../../services/client/scripts.service';
 
 @Component({
   selector: 'shared-auth-button',
@@ -13,74 +11,67 @@ import { Router } from '@angular/router';
 })
 export class AuthButtonComponent implements OnInit, OnDestroy {
   isLoggedIn = false;
-  user: any = null;
-  showStartButton = false;
-  private tokenSubscription: Subscription | undefined;
+  user: string | null = null;
+  fakeUsername = '';
+
+  // Breakpoint: < 768px = mobile
+  private readonly MOBILE_BREAKPOINT = 768;
+
+  private authSub: any;
 
   constructor(
     private dialog: MatDialog,
-    private as: AuthService,
-    private ds: DeviceService,
-    private router: Router
-  ) { }
+    private authService: AuthService,
+    private scripts: ScriptsService
+  ) {}
 
   ngOnInit(): void {
-       // Subscribe to token$ for reactive updates on login/logout
-       this.tokenSubscription = this.as.token$.subscribe(token => {
-        if (!token) {
-          this.isLoggedIn = false;
-          return;
-        }else{
-          this.isLoggedIn = true;
-        }
-      
-      });
-      // Token exists: verify it
-      this.as.verify().subscribe({
-        next: (result: any) => {
-          if (result && result.valid) {
-            this.user = result.valid; // Set full result as user
-            this.isLoggedIn = true;
-            // On initial load or re-verify, proceed to start 
-          }
-        },
-        error: (error) => {
-          console.error('Verify error:', error);
-          this.user = null;
-          this.isLoggedIn = false;
-        
-        }
-      });
+    this.subscribeToAuth();
+    this.authService.verify().subscribe();
   }
 
-  ngOnDestroy(): void {
-    if (this.tokenSubscription) {
-      this.tokenSubscription.unsubscribe();
-    }
-  }
-
-  openLoginModal(): void {
-    const dialogRef = this.dialog.open(AuthComponent, {
-      disableClose: true,
-      panelClass: 'custom-dialog-pane',
-      width: '100%',
-      maxWidth: '40vw',
-      height: '65vh',
-      maxHeight: '80vh',
-      autoFocus: false
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      console.log('Dialog closed with:', result);
-      if (result) {
-        // Directly proceed to start after successful login
+  private subscribeToAuth(): void {
+    this.authSub = this.authService.a$.subscribe(address => {
+      if (address) {
+        this.isLoggedIn = true;
+        this.user = address;
+        this.fakeUsername = `AG${this.scripts.hashFnv32a(address, true, Date.now())}`;
+      } else {
+        this.isLoggedIn = false;
+        this.user = null;
+        this.fakeUsername = '';
       }
     });
   }
 
-  logout(): void {
-    this.as.clearToken(); // Triggers subscription to update state
+  openLoginModal(): void {
+    const isMobile = window.innerWidth < this.MOBILE_BREAKPOINT;
+
+    this.dialog.open(AuthComponent, {
+      disableClose: true,
+      width: isMobile ? '90vw' : '60vw',
+      maxWidth: isMobile ? '90vw' : '500px',   // optional: hard cap
+      height: isMobile ? '75vh' : '75vh',
+      maxHeight: '90vh',
+      autoFocus: false,
+      panelClass: 'auth-dialog' // optional, for backdrop styling only
+    }).afterClosed().subscribe(() => {
+      this.authService.verify().subscribe(); // refresh session
+    });
   }
 
+  // Optional: Re-calculate on window resize (e.g. rotate phone)
+  @HostListener('window:resize')
+  onResize() {
+    // You can store current width if needed elsewhere
+    // this.isMobile = window.innerWidth < this.MOBILE_BREAKPOINT;
+  }
 
+  logout(): void {
+    this.authService.logout();
+  }
+
+  ngOnDestroy(): void {
+    this.authSub?.unsubscribe();
+  }
 }

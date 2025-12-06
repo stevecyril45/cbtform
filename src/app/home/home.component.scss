@@ -1,369 +1,40 @@
-/* Core Styling */
-
-* {
-//   background-color: #F1F4F6;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 400 !important;
-}   
-
-.carousel-container{
-  margin-bottom: 15px;
+.text-gradient {
+  background: linear-gradient(90deg, #6a11cb, #2575fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.card {
-  border: none;
-  border-radius:none;
-  box-shadow: 12px 12px 12px 12px rgba(11, 11, 11, 0.05);
-  background-color: #fff;
-  
+.cta-sparkle {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.5), transparent 70%);
+  transform: rotate(30deg);
+  transition: all 0.6s;
+  pointer-events: none;
 }
 
-.h-custom{
-    color: #080F1E !important;
+.cta-button:hover .cta-sparkle {
+  transform: translateX(100%) translateY(100%) rotate(30deg);
 }
 
-.b-custom{
-    background-color: #080F1E !important;
-}
-
-#timeline-card{
-    height: 400px;
-    overflow: auto;
-}
-.card .head1{
-    border-bottom: 2px solid #ccc;
-    padding: 10px;
-}
-.card-icon {
-  font-size: 2.5rem;
-  width: 60px;
-  height: 60px;
-  background: #f0f2f5;
-  padding: 15px;
-  border-radius: 10%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: auto;
-  margin-bottom: 0.75rem;
-}
-
-.stat-card h3 {
-  font-size: 2.5rem;
-  margin-bottom: 0.4rem;
-  margin-top: 0.4rem;
-}
-
-.stat-card p{
-    font-weight: bolder;
-}
-
-.stat-card small {
-  font-size: 0.75rem;
-  padding: 1rem;
-}
-.timeit{
-  background-color: #fdf7e6;
-}
-.timeline {
-  border-left: 3px solid #e0e0e0;
-  padding-left: 1rem;
-  position: relative;
-}
-
-.timeline-item {
-  position: relative;
-  margin-bottom: 1.5rem;
-}
-
-
-.btn {
-  border-radius: 0.5rem;
-}
-
-
-.pagination .page-link {
-  color: #555;
-  border: 1px solid #ccc;
-}
-
-.progress-bar {
-  border-radius: 1rem;
-}
-
-.rounded-4 {
-  border-radius: 1.5rem !important;
-}
-
-/* Chat Specific Enhancements */
-
-.card-body .rounded-circle {
-  border: 2px solid #dee2e6;
-}
-
-.bg-light,
-.bg-info {
-  border-radius: 0.75rem;
-}
-
-.card-footer input {
-  border-radius: 30px;
-  padding: 10px 20px;
-  border: 1px solid #dee2e6;
-}
-
-/* Tasks Section */
-
-.list-group-item {
-  border: none;
-  border-bottom: 1px solid #f0f0f0;
-  padding: 1rem 1.25rem;
-}
-
-.badge {
-  font-size: 0.7rem;
-  padding: 0.4em 0.6em;
-}
-
-/* Footer Stats */
-
-.card-body.d-flex.flex-wrap > div {
-  min-width: 220px;
-  flex: 1;
-}
-
-.card-body h4 {
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-
-// Chat Box Enhancements
-#chat-avatar{
-  width: 50px;
-  height: 50px;
+.floating-shape {
+  position: absolute;
   border-radius: 50%;
+  background: linear-gradient(45deg, #6a11cb, #2575fc);
+  opacity: 0.1;
+  animation: float 15s infinite linear;
 }
 
-/* ================================
-   Responsive Styles
-   ================================ */
-@media (max-width: 1024px) {
-  .card-icon {
-    font-size: 1.75rem;
-    width: 50px;
-    height: 50px;
-  }
+@keyframes float {
+  0% { transform: translateY(0) translateX(0) rotate(0deg); }
+  100% { transform: translateY(-100vh) translateX(100px) rotate(360deg); }
 }
 
-@media (max-width: 768px) {
-  .card-body.d-flex.flex-wrap > div {
-    flex: 1 1 100%;
-    margin-bottom: 1rem;
-  }
-
-  .btn, .card-footer .btn {
-    font-size: 0.9rem;
-    padding: 0.5rem 1rem;
-  }
-
-  .timeline-item {
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .card-header h5,
-  .card-header i {
-    font-size: 0.9rem;
-  }
-
-  .card-footer .btn {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.6rem;
-  }
-
-  .list-group-item {
-    padding: 0.75rem;
-  }
-
-  .stat-card h3 {
-    font-size: 1.5rem;
-  }
-
-  .timeline-item::before {
-    left: -18px;
-  }
-}
-
-
- @media (max-width: 1024px) {
-    .stat-card h3 {
-      font-size: 1.5rem;
-    }
-  }
-  @media (max-width: 768px) {
-    .stat-card h3 {
-      font-size: 1.3rem;
-    }
-  }
-  @media (max-width: 480px) {
-    .stat-card h3 {
-      font-size: 1.1rem;
-    }
-    .carousel-inner img {
-      height: 200px;
-      object-fit: cover;
-    }
-  }
-
-
-  .carousel-container {
-  max-width: 100%;
-}
-
-.carousel-inner {
-  border-radius: 20px;
-  overflow: hidden;
-}
-
-.carousel-img {
-  height: 400px;
-  object-fit: cover;
-  width: 400px;
-  transition: transform 0.5s ease;
-}
-
-#shaking{
-  background-position: top center;
-  background-repeat: no-repeat;
-  background-size: cover;
-}
-.carousel-item:hover .carousel-img {
-  transform: scale(1.02);
-}
-
-
-// Explore Section
-.explore-section {
-  padding: 1rem;
-  border-radius: 0.5rem;
-}
-
-.explore-section h6 {
-  font-size: 1.1rem;
-  margin-bottom: 0.25rem;
-}
-
-.explore-section p {
-  font-size: 0.9rem;
-}
-
-/* Media Queries for Responsiveness */
-@media (max-width: 1024px) {
-  .explore-section {
-    flex-direction: column;
-    text-align: center;
-    gap: 0.5rem;
-  }
-
-  .explore-section h6 {
-    font-size: 1rem;
-  }
-
-  .explore-section p {
-    font-size: 0.85rem;
-  }
-
-  .explore-section a {
-    width: 100%;
-    max-width: 200px;
-    margin: 0 auto;
-  }
-}
-
-@media (max-width: 768px) {
-  .explore-section {
-    padding: 0.75rem;
-  }
-
-  .explore-section h6 {
-    font-size: 0.95rem;
-  }
-
-  .explore-section p {
-    font-size: 0.8rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .explore-section h6 {
-    font-size: 0.9rem;
-  }
-
-  .explore-section p {
-    font-size: 0.75rem;
-  }
-
-  .explore-section a {
-    font-size: 0.85rem;
-  }
-}
-
-@media (max-width: 320px) {
-  .explore-section {
-    padding: 0.5rem;
-  }
-
-  .explore-section h6 {
-    font-size: 0.85rem;
-  }
-
-  .explore-section p {
-    font-size: 0.7rem;
-  }
-
-  .explore-section a {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.8rem;
-  }
-}
-
-
-/* Media Queries */
-@media screen and (max-width: 1024px) {
-  .carousel-img {
-    height: 350px;
-  }
-}
-
-@media screen and (max-width: 768px) {
-  .carousel-img {
-    height: 300px;
-  }
-}
-
-@media screen and (max-width: 576px) {
-  .carousel-img {
-    height: 220px;
-  }
-}
-
-@media screen and (max-width: 425px) {
-  .carousel-img {
-    height: 200px;
-  }
-}
-
-@media screen and (max-width: 375px) {
-  .carousel-img {
-    height: 180px;
-  }
-}
-
-@media screen and (max-width: 320px) {
-  .carousel-img {
-    height: 150px;
-  }
-}
+.shape-1 { width: 180px; height: 180px; top: 10%; left: 10%; animation-delay: 0s; }
+.shape-2 { width: 120px; height: 120px; top: 60%; right: 15%; animation-delay: 5s; }
+.shape-3 { width: 200px; height: 200px; bottom: 10%; left: 20%; animation-delay: 10s; }
+.shape-4 { width: 150px; height: 150px; top: 30%; right: 5%; animation-delay: 3s; }

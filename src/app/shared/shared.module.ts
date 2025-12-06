@@ -18,6 +18,8 @@ import { NgxAudioPlayerModule } from 'ngx-audio-player';
 import {RouterModule} from '@angular/router';
 import { AuthComponent } from './components/auth/auth.component';
 import { AuthButtonComponent } from './components/auth-button/auth-button.component';
+import { LoaderComponent } from './components/loader/loader.component';
+
 @NgModule({
   declarations: [
     ArraySortPipe,
@@ -25,8 +27,8 @@ import { AuthButtonComponent } from './components/auth-button/auth-button.compon
     SheduleMomentPipe,
     CustomTimerPipe,
     AuthComponent,
-    AuthButtonComponent
-
+    AuthButtonComponent,
+    LoaderComponent
   ],
   imports: [
     CommonModule,
@@ -59,7 +61,8 @@ import { AuthButtonComponent } from './components/auth-button/auth-button.compon
     IvyCarouselModule,
     NgxAudioPlayerModule,
     AuthComponent,
-    AuthButtonComponent
+    AuthButtonComponent,
+    LoaderComponent
   ]
 })
 export class SharedModule {

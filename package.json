@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "init": "npm i --legacy-peer-deps --no-optional && cd ./dist && npm run init && cd .. && npm run ip",
+    "init-ignore-env": "npm i --legacy-peer-deps --no-optional && cd ./dist && npm run init-ignore-env && cd .. && npm run ip",
     "ip": "node ip.js",
     "start": "node start-dev.js",
     "lunch": "cd ./dist && npm run start",

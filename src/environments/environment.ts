@@ -4,16 +4,17 @@
 
 export const environment = {
   production: false,
-  appDomain: 'https://0.00.000.00:0000',
-  api: 'https://0.00.000.00:0000/api',
+  appDomain: 'https://100.85.124.80:1958',
+  api: 'https://100.85.124.80:1958/api',
   pub_key: "7f2G4iAwNUrJcGe05gNUrJBYZjsGkcAY0LWp9ck0826oA0826wNUrJcAf2G2G4iAnrY0LWp9n",
   paystack: "",
   tawkexternal: "",
   wallet: "",
+  serverAddress: '100.85.124.80',
+  ipApi: 'https://ipapi.co/json/',
   infurakey: "",
-  partnerConnect: 'http://100.85.124.80:1967',
+  partnerConnect: 'https://100.85.124.80:1967',
   adminAddress: 'somtobuchi@gmail.com',
-  ipApi: 'https://ipapi.co/json/',  
   authUrl: 'https://100.85.124.80:1959'
 
 };

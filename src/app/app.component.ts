@@ -1,17 +1,12 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { MediaMatcher } from '@angular/cdk/layout';
-import { Router, NavigationEnd, Event as RouterEvent } from '@angular/router';
-import { filter } from 'rxjs/operators';
-import { AuthService } from './shared/services/auth/auth.service';
-import { DeviceService } from './shared/services/client/device.service';
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit, OnDestroy {
-  title = 'Auth';
+  title = 'SMTP';
   mobileQuery: MediaQueryList;
   parentUrl: string | null = null;
 
@@ -24,10 +19,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private _messageListener: (event: MessageEvent) => void;
   constructor(
     private changeDetectorRef: ChangeDetectorRef,
-    private media: MediaMatcher,
-    private router: Router,
-    private authService: AuthService,
-    private deviceService: DeviceService
+    private media: MediaMatcher
   ) {
     this.mobileQuery = media.matchMedia('(max-width: 600px)');
     this._mobileQueryListener = () => changeDetectorRef.detectChanges();
@@ -38,11 +30,9 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Add message listener for cross-origin parent URL
-    window.addEventListener('message', this._messageListener);
+
 
   }
-
 
 
   // Handle incoming postMessage from parent
@@ -55,6 +45,7 @@ export class AppComponent implements OnInit, OnDestroy {
       }
       return;
     }
+
 
   }
 

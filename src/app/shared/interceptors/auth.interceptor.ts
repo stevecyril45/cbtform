@@ -18,25 +18,28 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(private authService: AuthService, private ds:DeviceService) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    const requestedat = `${Date.now()}`;
-    const appAddress = environment.pub_key;
-    const accept = 'application/json';
-    const token:any = this.authService.getToken();
     // Skip verification for requests not targeting the appDomain URL
-    if (!request.url.includes(environment.appDomain + "/api")) {
+    if (!request.url.includes(environment.appDomain)) {
       return next.handle(request);
     }
-    return this.authService.requestIp().pipe(
-      switchMap((ip) => {
-        console.log(ip);
-        const reqWithIp = request.clone({ setHeaders: { ip,requestedat,
-          appAddress,
-          accept,
-          token } });
-        return next.handle(reqWithIp);
+
+    // For requests to appDomain, verify auth first
+    return this.authService.verify().pipe(
+      switchMap((result) => {
+        console.log(result.valid);
+        if (result.valid) {
+          return next.handle(request);
+        } else {
+          this.authService.logout();
+          this.ds.oInfoNotification('Connect Afro Gift I.D', `No Afro Gift I.D Conencted, Please connect your Afro Gift I.D`)
+          // Return unauthenticated error
+          const error = new HttpErrorResponse({
+            status: 401,
+            statusText: 'Unauthenticated'
+          });
+          return throwError(() => error);
+        }
       })
     );
-
-
   }
 }
