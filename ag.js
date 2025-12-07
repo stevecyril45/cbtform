@@ -16,9 +16,12 @@ const c = {
   orange: '\x1b[38;5;214m',
   pink: '\x1b[38;5;205m',
   dim: '\x1b[2m',
-  bgPurple: '\x1b[45m',
-  bgCyan: '\x1b[46m',
-  bgYellow: '\x1b[43m',
+
+  // ADD THESE MISSING ONES NOW
+  white: '\x1b[97m',           // Bright white text
+  bgGreen: '\x1b[42m',         // Green background
+  bgWhite: '\x1b[107m',        // White background
+  bgCyan: '\x1b[46m',          // Keep if you want fallback
 };
 
 // CRITICAL: Detect which npm script was used
@@ -31,33 +34,50 @@ process.argv.forEach(arg => {
     name = arg.slice(2).trim().toLowerCase().replace(/^r-?/i, '');
   }
 });
-
 if (!name || name === 'help') {
   console.clear();
   console.log(`
-${c.bgPurple}${c.bold}                                                                                 ${c.reset}
-${c.bgPurple}${c.bold}    █████╗  ██████╗  ██████╗██╗     ██╗         ${c.bgCyan}${c.bold} Afro Gift CLI v2.0 ${c.reset}${c.bgPurple}     ${c.reset}
-${c.bgPurple}${c.bold}   ██╔══██╗██╔════╝ ██╔════╝██║     ██║            ${c.cyan}Command Line Interface${c.reset}${c.bgPurple}     ${c.reset}
-${c.bgPurple}${c.bold}   ███████║██║  ███╗██║     ██║     ██║         ${c.purple}Powered by Fire & Precision${c.reset}${c.bgPurple}     ${c.reset}
-${c.bgPurple}${c.bold}   ██╔══██║██║   ██║██║     ██║     ██║                                      ${c.reset}
-${c.bgPurple}${c.bold}   ██║  ██║╚██████╔╝╚██████╔╝███████╗███████╗                                ${c.reset}
-${c.bgPurple}${c.bold}   ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚══════╝╚══════╝                                ${c.reset}
+${c.bgGreen}${c.bold}${c.white}                                                                                                   ${c.reset}
+${c.bgGreen}${c.bold}${c.white}    █████╗  ██████╗  ██████╗ ██████╗ ██╗     ██╗         ${c.bgWhite}${c.green}${c.bold} AGCLi v3.0 — Afro Gift CLI ${c.reset}${c.bgGreen}${c.white}     ${c.reset}
+${c.bgGreen}${c.bold}${c.white}   ██╔══██╗██╔════╝ ██╔════╝██╔═══██╗██║     ██║            ${c.green}One CLI. Total Domination.${c.reset}${c.bgGreen}${c.white}     ${c.reset}
+${c.bgGreen}${c.bold}${c.white}   ███████║██║  ███╗██║     ██║   ██║██║     ██║         ${c.green}Frontend • Backend • Fire${c.reset}${c.bgGreen}${c.white}           ${c.reset}
+${c.bgGreen}${c.bold}${c.white}   ██╔══██║██║   ██║██║     ██║   ██║██║     ██║                                      ${c.reset}
+${c.bgGreen}${c.bold}${c.white}   ██║  ██║╚██████╔╝╚██████╔╝╚██████╔╝███████╗███████╗                                ${c.reset}
+${c.bgGreen}${c.bold}${c.white}   ╚═╝  ╚═╝ ╚═════╝  ╚═════╝  ╚═════╝ ╚══════╝╚══════╝                                ${c.reset}
 ${c.reset}
 
-${c.bold}${c.pink}╔══════════════════════════════════════════════════════════════════════════════╗${c.reset}
-${c.bold}${c.pink}║                          ${c.cyan}AGC Li — Afro Gift CLI${c.pink}                            ║${c.reset}
-${c.bold}${c.pink}╚══════════════════════════════════════════════════════════════════════════════╝${c.reset}
+${c.bold}${c.green}╔══════════════════════════════════════════════════════════════════════════════════╗${c.reset}
+${c.bold}${c.green}║                     AGCLi — Afro Gift Command Line Interface                     ║${c.reset}
+${c.bold}${c.green}╚══════════════════════════════════════════════════════════════════════════════════╝${c.reset}
 
-${c.green}Checkmark Generate Feature Module:${c.reset}          ${c.yellow}npm run agmc -- --user${c.reset}
-${c.green}Checkmark Generate Service:${c.reset}                 ${c.yellow}npm run agms -- --card${c.reset}
-${c.red}Fire Force Delete & Regenerate Module:${c.reset}   ${c.yellow}npm run agmcr -- --user${c.reset}
-${c.red}Fire Force Delete & Regenerate Service:${c.reset}  ${c.yellow}npm run agmsr -- --card${c.reset}
+${c.green}${c.bold}FRONTEND COMMANDS (Angular)                          BACKEND COMMANDS (Node.js Services)${c.reset}
 
-${c.dim}   Example: ${c.cyan}npm run agmc -- --payment-gateway${c.reset}
+${c.green}Generate Feature Module                 Generate Backend Service${c.reset}
+   ${c.yellow}npm run agmc   -- --user${c.reset}               ${c.yellow}npm run ags    -- --user${c.reset}
+   ${c.yellow}npm run agmc   -- --wallet${c.reset}             ${c.yellow}npm run ags    -- --payment${c.reset}
 
-${c.orange}${c.italic}Sparkles NOW 100% COMPATIBLE WITH WINDOWS, MAC & LINUX Sparkles${c.reset}
+${c.green}Generate Angular Service                 Force Regenerate (Deletes & Recreates)${c.reset}
+   ${c.yellow}npm run agms   -- --auth${c.reset}               ${c.red}npm run ags    -- --card    ${c.dim}(overwrites existing)${c.reset}
 
-${c.purple}${c.bold}   Afro Gift Team — We don't just code. We ignite. Fire Fire Fire${c.reset}
+${c.red}Force Delete & Recreate Module               Example Usage${c.reset}
+   ${c.yellow}npm run agmcr  -- --profile${c.reset}            ${c.cyan}npm run ags -- --giftcard-processor${c.reset}
+   ${c.yellow}npm run agmsr  -- --notification${c.reset}
+
+${c.green}${c.bold}Naming Rules:${c.reset} lowercase • letters • numbers • hyphens only • no underscores
+${c.dim}   Good → auth-login • payment-gateway • user-profile • card-v2 • admin-tools
+   Bad  → User • auth_login • CardService • 123test${c.reset}
+
+${c.green}${c.bold}
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                  ║
+║        Official Developer Portal: ${c.cyan}${c.underline}https://developer.afrogift.com.ng${c.reset}${c.green}       ║
+║                                                                                  ║
+║              Afro Gift Team — We don’t just build systems.                   ║
+║                    We ignite revolutions. Fire Fire Fire                ║
+║                                                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════════╝${c.reset}
+
+${c.green}${c.italic}100% Cross-Platform • Windows • macOS • Linux • Built with Pure Naija Fire${c.reset}
   `);
   process.exit(0);
 }
@@ -65,7 +85,7 @@ ${c.purple}${c.bold}   Afro Gift Team — We don't just code. We ignite. Fire Fi
 if (!/^[a-z][a-z0-9-]*$/.test(name)) {
   console.log(`\n${c.red}${c.bold}Invalid name: "${name}"${c.reset}`);
   console.log(`${c.yellow}Rule: lowercase • letters • numbers • hyphens only${c.reset}`);
-  console.log(`${c.dim}Good: card, auth-login, user-profile\nBad : Card, user_profile, 123start${c.reset}\n`);
+  console.log(`${c.dim}Good: card, authLogin, userProfile\nBad : card-profile, user_profile, 123start${c.reset}\n`);
   process.exit(1);
 }
 
@@ -122,7 +142,7 @@ try {
       `ng g c ${name}/view --module=${name}`
     ];
     cmds.forEach((cmd, i) => {
-      console.log(`  ${c.dim}[${i+1}/4]${c.reset} ${c.purple}Running →${c.reset} ${c.cyan}${cmd}${c.reset}`);
+      console.log(`  ${c.dim}[${i + 1}/4]${c.reset} ${c.purple}Running →${c.reset} ${c.cyan}${cmd}${c.reset}`);
       execSync(cmd, { stdio: 'inherit' });
     });
   }
