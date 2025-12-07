@@ -1,4 +1,5 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { AGWorkerService } from '../shared/services/workers/agworker.service';
 
 @Component({
   selector: 'app-home',
@@ -7,11 +8,23 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 })
 export class HomeComponent implements OnInit {
 
-  constructor(
-  ) {
+  welcomeMessage = '';
+
+  constructor(private agWorker: AGWorkerService) {
+
+  }
+
+  async loadWelcome() {
+    try {
+      this.welcomeMessage = await this.agWorker.welcome();
+      // Try typing, scrolling, opening dev tools → everything stays SMOOTH!
+    } catch (err) {
+      this.welcomeMessage = 'Failed to connect to AG Network';
+    }
   }
 
   ngOnInit(): void {
+    this.loadWelcome();
   }
 
 
