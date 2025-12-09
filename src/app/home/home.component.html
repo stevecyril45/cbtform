@@ -1,65 +1,416 @@
-<div class="home-container">
-  <!-- Background Floating Elements -->
-  <div class="background-elements">
-    <div class="floating-shape shape-1"></div>
-    <div class="floating-shape shape-2"></div>
-    <div class="floating-shape shape-3"></div>
-    <div class="floating-shape shape-4"></div>
-  </div>
-
-  <!-- Main Content -->
-  <div class="container">
-    <div class="row align-items-center min-vh-100 py-5">
-      <div class="col-lg-8 col-xl-7 mx-auto text-center">
-
-        <!-- Logo/Brand -->
-        <div class="brand-section mb-5">
-          <div class="logo-icon mb-3">
-            <i class="fas fa-gift fa-3x text-primary"></i>
-          </div>
-          <h1 class="brand-name display-4 fw-bold">Afro Gift</h1>
-          <p class="text-muted lead">App boilerplate</p>
-        </div>
-
-        <!-- Hero Section -->
-        <div class="hero-section mb-5">
-          <h2 class="hero-title display-5 fw-bold lh-base">
-            Build Secure Apps<br>
-            Experiences with <span class="text-gradient">Afro Gift Open API</span>
-          </h2>
-          <p class="hero-description lead mt-4 text-secondary">
-            Integrate your app or website in minutes using our robust, developer-friendly app.
-          </p>
-        </div>
-
-        <!-- Primary CTA: Documentation -->
-        <div class="cta-section mb-4">
-          <a
-            href="https://developer.afrogift.com.ng"
-            target="_blank"
-            class="cta-button btn btn-primary btn-lg px-5 py-3 shadow-lg position-relative overflow-hidden"
-          >
-            <span class="cta-content d-flex align-items-center justify-content-center">
-              <i class="fas fa-book-open me-3"></i>
-              <span class="fw-bold">Read the Documentation</span>
-            </span>
-            <div class="cta-sparkle"></div>
-          </a>
-        </div>
-
-        <!-- Secondary CTAs -->
-        <div class="secondary-ctas d-flex flex-column flex-sm-row gap-3 justify-content-center align-items-center">
-          <a href="https://github.com/afrogift" target="_blank" class="btn btn-outline-secondary btn-lg px-4 py-3">
-            <i class="fab fa-github me-2"></i> GitHub Repos
-          </a>
-        </div>
-
-        <!-- Trust Indicators (Optional) -->
-        <div class="trust-badges mt-5 text-muted small">
-          <p>Trusted by developers across Africa • Secure • Actively Maintained • Open API</p>
-        </div>
-
-      </div>
+<!-- Complete Participant & Feedback Form -->
+<div class="participant-form-container">
+  <div class="participant-form-card">
+    <div class="participant-header">
+      <h1><i class="fas fa-user-graduate"></i> Celcium360 Impact Hub</h1>
+      <p class="form-subtitle">Complete your information and feedback before starting the Emotional Intelligence CBT Examination</p>
     </div>
+    
+ <!-- Update the success-container section in your HTML -->
+<div *ngIf="isSubmittedSuccessfully" class="success-container">
+  <div class="success-icon">
+    <i class="fas fa-check-circle"></i>
+  </div>
+  <h3>Thank You for Your Submission!</h3>
+  <p>Your information has been saved successfully. You can now proceed to the examination.</p>
+  
+  <div class="exam-start-container">
+    <button 
+      class="start-exam-btn"
+      (click)="startExam()">
+      <i class="fas fa-play-circle"></i> Start Emotional Intelligence CBT Examination
+    </button>
+    
+    <div class="action-buttons">
+     
+      <button 
+        class="start-fresh-btn"
+        (click)="startFresh()">
+        <i class="fas fa-redo"></i> Go Back
+      </button>
+    </div>
+    
+    <div class="exam-instructions">
+      <p><strong>Important:</strong> The exam will open in a new tab. Please ensure pop-ups are enabled for this site.</p>
+    </div>
+  </div>
+</div>
+    
+    <!-- Show form only if not submitted -->
+    <form *ngIf="!isSubmittedSuccessfully" [formGroup]="participantForm" (ngSubmit)="submitParticipantInfo()" novalidate>
+      <!-- SECTION 1: Participant Bio Data -->
+      <div class="form-section">
+        <div class="section-header">
+          <h3><i class="fas fa-id-card"></i> Participant Bio Data</h3>
+          <p class="section-note">All fields are required unless marked as optional</p>
+        </div>
+        
+        <!-- Personal Information -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name <span class="required">*</span></label>
+            <input 
+              id="firstName"
+              type="text" 
+              formControlName="firstName"
+              placeholder="Enter your first name"
+              [class.error]="participantForm.get('firstName')?.invalid && participantForm.get('firstName')?.touched"
+              required>
+            <div class="error-message" *ngIf="participantForm.get('firstName')?.invalid && participantForm.get('firstName')?.touched">
+              <span *ngIf="participantForm.get('firstName')?.errors?.['required']">First name is required</span>
+              <span *ngIf="participantForm.get('firstName')?.errors?.['minlength']">Minimum 2 characters required</span>
+              <span *ngIf="participantForm.get('firstName')?.errors?.['pattern']">Only letters and spaces allowed</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="middleName">Middle Name <span class="optional">(Optional)</span></label>
+            <input 
+              id="middleName"
+              type="text" 
+              formControlName="middleName"
+              placeholder="Enter your middle name">
+          </div>
+          
+          <div class="form-group">
+            <label for="surname">Surname <span class="required">*</span></label>
+            <input 
+              id="surname"
+              type="text" 
+              formControlName="surname"
+              placeholder="Enter your surname"
+              [class.error]="participantForm.get('surname')?.invalid && participantForm.get('surname')?.touched"
+              required>
+            <div class="error-message" *ngIf="participantForm.get('surname')?.invalid && participantForm.get('surname')?.touched">
+              <span *ngIf="participantForm.get('surname')?.errors?.['required']">Surname is required</span>
+              <span *ngIf="participantForm.get('surname')?.errors?.['minlength']">Minimum 2 characters required</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Certificate Name -->
+        <div class="form-group">
+          <label for="certificateName">How would you like your name to appear on your certificate? <span class="required">*</span></label>
+          <input 
+            id="certificateName"
+            type="text" 
+            formControlName="certificateName"
+            placeholder="Full name as desired on certificate"
+            [class.error]="participantForm.get('certificateName')?.invalid && participantForm.get('certificateName')?.touched"
+            required>
+          <div class="error-message" *ngIf="participantForm.get('certificateName')?.invalid && participantForm.get('certificateName')?.touched">
+            Certificate name is required (minimum 3 characters)
+          </div>
+        </div>
+        
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">Email Address <span class="required">*</span></label>
+          <input 
+            id="email"
+            type="email" 
+            formControlName="email"
+            placeholder="Enter your email address"
+            [class.error]="participantForm.get('email')?.invalid && participantForm.get('email')?.touched"
+            required>
+          <div class="error-message" *ngIf="participantForm.get('email')?.invalid && participantForm.get('email')?.touched">
+            <span *ngIf="participantForm.get('email')?.errors?.['required']">Email is required</span>
+            <span *ngIf="participantForm.get('email')?.errors?.['email']">Please enter a valid email address</span>
+          </div>
+        </div>
+        
+        <!-- Employment Status -->
+        <div class="form-group">
+          <label>Are you currently employed? <span class="required">*</span></label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" formControlName="isEmployed" value="Yes">
+              <span class="radio-custom"></span>
+              Yes
+            </label>
+            <label class="radio-label">
+              <input type="radio" formControlName="isEmployed" value="No">
+              <span class="radio-custom"></span>
+              No
+            </label>
+          </div>
+          <div class="error-message" *ngIf="participantForm.get('isEmployed')?.invalid && participantForm.get('isEmployed')?.touched">
+            Please select employment status
+          </div>
+        </div>
+        
+        <!-- Employed Fields -->
+        <div *ngIf="participantForm.get('isEmployed')?.value === 'Yes'" class="conditional-fields">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="jobTitle">Job Title / Portfolio</label>
+              <input 
+                id="jobTitle"
+                type="text" 
+                formControlName="jobTitle"
+                placeholder="Enter your job title">
+            </div>
+            
+            <div class="form-group">
+              <label for="organization">Organization Name</label>
+              <input 
+                id="organization"
+                type="text" 
+                formControlName="organization"
+                placeholder="Enter organization name">
+            </div>
+            
+            <div class="form-group">
+              <label for="industry">Industry</label>
+              <select id="industry" formControlName="industry">
+                <option value="">Select Industry</option>
+                <option *ngFor="let industry of industries" [value]="industry">{{ industry }}</option>
+              </select>
+              <div class="error-message" *ngIf="participantForm.get('industry')?.invalid && participantForm.get('industry')?.touched">
+                Please select an industry
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Unemployed Fields -->
+        <div *ngIf="participantForm.get('isEmployed')?.value === 'No'" class="conditional-fields">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="careerStatus">Current career status / aspirations</label>
+              <textarea 
+                id="careerStatus"
+                formControlName="careerStatus"
+                placeholder="Describe your current career status or aspirations"
+                rows="3"></textarea>
+              <div class="char-count" *ngIf="participantForm.get('careerStatus')?.value">
+                {{ participantForm.get('careerStatus')?.value.length }}/500
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="industryInterest">Industry of interest</label>
+              <select id="industryInterest" formControlName="industryInterest">
+                <option value="">Select Industry of Interest</option>
+                <option *ngFor="let industry of industries" [value]="industry">{{ industry }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- SECTION 2: Masterclass Feedback & Organizational Insights -->
+      <div class="form-section">
+        <div class="section-header">
+          <h3><i class="fas fa-comment-dots"></i> Masterclass Feedback & Organizational Insights</h3>
+          <p class="section-note">Help us improve and identify organizational needs</p>
+        </div>
+        
+        <!-- A. Participant Feedback -->
+        <div class="sub-section">
+          <h4><i class="fas fa-star"></i> Participant Feedback</h4>
+          
+          <div class="form-group">
+            <label for="takeaways">1. What were your top three takeaways from this masterclass? <span class="required">*</span></label>
+            <textarea 
+              id="takeaways"
+              formControlName="takeaways"
+              placeholder="List your top three learnings or insights from the masterclass..."
+              rows="4"
+              [class.error]="participantForm.get('takeaways')?.invalid && participantForm.get('takeaways')?.touched"
+              required></textarea>
+            <div class="error-message" *ngIf="participantForm.get('takeaways')?.invalid && participantForm.get('takeaways')?.touched">
+              <span *ngIf="participantForm.get('takeaways')?.errors?.['required']">This field is required</span>
+              <span *ngIf="participantForm.get('takeaways')?.errors?.['minlength']">Minimum 20 characters required</span>
+            </div>
+            <div class="char-count" *ngIf="participantForm.get('takeaways')?.value">
+              {{ participantForm.get('takeaways')?.value.length }}/1000
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="applicationPlan">2. How do you intend to apply what you learned in your workplace? <span class="required">*</span></label>
+            <textarea 
+              id="applicationPlan"
+              formControlName="applicationPlan"
+              placeholder="Describe your plan for applying these insights in your work context..."
+              rows="4"
+              [class.error]="participantForm.get('applicationPlan')?.invalid && participantForm.get('applicationPlan')?.touched"
+              required></textarea>
+            <div class="error-message" *ngIf="participantForm.get('applicationPlan')?.invalid && participantForm.get('applicationPlan')?.touched">
+              <span *ngIf="participantForm.get('applicationPlan')?.errors?.['required']">This field is required</span>
+              <span *ngIf="participantForm.get('applicationPlan')?.errors?.['minlength']">Minimum 20 characters required</span>
+            </div>
+            <div class="char-count" *ngIf="participantForm.get('applicationPlan')?.value">
+              {{ participantForm.get('applicationPlan')?.value.length }}/1000
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="behavioralChanges">3. What will you start doing differently to improve workplace relationships, teamwork, and emotional intelligence? <span class="required">*</span></label>
+            <textarea 
+              id="behavioralChanges"
+              formControlName="behavioralChanges"
+              placeholder="Describe specific behavioral changes you plan to implement..."
+              rows="4"
+              [class.error]="participantForm.get('behavioralChanges')?.invalid && participantForm.get('behavioralChanges')?.touched"
+              required></textarea>
+            <div class="error-message" *ngIf="participantForm.get('behavioralChanges')?.invalid && participantForm.get('behavioralChanges')?.touched">
+              <span *ngIf="participantForm.get('behavioralChanges')?.errors?.['required']">This field is required</span>
+              <span *ngIf="participantForm.get('behavioralChanges')?.errors?.['minlength']">Minimum 20 characters required</span>
+            </div>
+            <div class="char-count" *ngIf="participantForm.get('behavioralChanges')?.value">
+              {{ participantForm.get('behavioralChanges')?.value.length }}/1000
+            </div>
+          </div>
+        </div>
+        
+        <!-- B. Referrals, Organizational Needs & Next Steps -->
+        <div class="sub-section">
+          <h4><i class="fas fa-handshake"></i> Referrals, Organizational Needs & Next Steps</h4>
+          
+          <div class="form-group">
+            <label>4. Would you recommend Celcium360 Solutions to your organization? <span class="required">*</span></label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" formControlName="wouldRecommend" value="Yes">
+                <span class="radio-custom"></span>
+                Yes
+              </label>
+              <label class="radio-label">
+                <input type="radio" formControlName="wouldRecommend" value="No">
+                <span class="radio-custom"></span>
+                No
+              </label>
+            </div>
+            <div class="error-message" *ngIf="participantForm.get('wouldRecommend')?.invalid && participantForm.get('wouldRecommend')?.touched">
+              Please select an option
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>5. Which of our solutions/services do you believe your organization needs the most? <span class="required">*</span></label>
+            <div class="checkbox-grid">
+              <label class="checkbox-label" *ngFor="let solution of solutions">
+                <input 
+                  type="checkbox" 
+                  [value]="solution.value" 
+                  (change)="onSolutionSelect($event, solution.value)"
+                  [checked]="selectedSolutions.includes(solution.value)">
+                <span class="checkbox-custom"></span>
+                {{ solution.label }}
+              </label>
+            </div>
+            <div class="error-message" *ngIf="selectedSolutions.length === 0 && participantForm.get('solutions')?.touched">
+              Please select at least one solution
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="serviceNeedReason">6. Why do you believe this service is needed in your organization?</label>
+            <textarea 
+              id="serviceNeedReason"
+              formControlName="serviceNeedReason"
+              placeholder="Explain the organizational context or challenges that make these services valuable..."
+              rows="3"></textarea>
+            <div class="char-count" *ngIf="participantForm.get('serviceNeedReason')?.value">
+              {{ participantForm.get('serviceNeedReason')?.value.length }}/500
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>7. Would you like to connect us with the appropriate person in your organization?</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" formControlName="connectWithOrg" value="Yes">
+                <span class="radio-custom"></span>
+                Yes
+              </label>
+              <label class="radio-label">
+                <input type="radio" formControlName="connectWithOrg" value="No">
+                <span class="radio-custom"></span>
+                No
+              </label>
+            </div>
+          </div>
+          
+          <!-- Contact Details (Conditional) -->
+          <div *ngIf="participantForm.get('connectWithOrg')?.value === 'Yes'" class="conditional-fields">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="contactName">Contact Name</label>
+                <input 
+                  id="contactName"
+                  type="text" 
+                  formControlName="contactName"
+                  placeholder="Enter contact's full name">
+              </div>
+              
+              <div class="form-group">
+                <label for="contactTitle">Job Title</label>
+                <input 
+                  id="contactTitle"
+                  type="text" 
+                  formControlName="contactTitle"
+                  placeholder="Enter contact's job title">
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="contactPhone">Phone Number</label>
+                <input 
+                  id="contactPhone"
+                  type="tel" 
+                  formControlName="contactPhone"
+                  placeholder="Enter contact's phone number">
+              </div>
+              
+              <div class="form-group">
+                <label for="contactEmail">Email Address</label>
+                <input 
+                  id="contactEmail"
+                  type="email" 
+                  formControlName="contactEmail"
+                  placeholder="Enter contact's email address">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="contactDepartment">Department</label>
+              <input 
+                id="contactDepartment"
+                type="text" 
+                formControlName="contactDepartment"
+                placeholder="Enter contact's department">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="additionalComments">9. Any additional comments, insights, or feedback?</label>
+            <textarea 
+              id="additionalComments"
+              formControlName="additionalComments"
+              placeholder="Share any other thoughts, suggestions, or feedback..."
+              rows="3"></textarea>
+            <div class="char-count" *ngIf="participantForm.get('additionalComments')?.value">
+              {{ participantForm.get('additionalComments')?.value.length }}/500
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Submit Button -->
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          class="submit-btn"
+          [disabled]="participantForm.invalid || isSubmitting"
+          [class.disabled]="participantForm.invalid || isSubmitting">
+          <i class="fas fa-paper-plane"></i> 
+          {{ isSubmitting ? 'Submitting...' : 'Submit Information' }}
+        </button>
+      </div>
+    </form>
   </div>
 </div>

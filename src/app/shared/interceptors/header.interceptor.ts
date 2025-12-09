@@ -23,7 +23,13 @@ export class HeaderInterceptor implements HttpInterceptor {
     next: HttpHandler
   ): Observable<HttpEvent<unknown>> {
 
-    // Only encrypt/intercept POST and PATCH requests with body
+    // 🚀 BYPASS ENCRYPTION FOR FIREBASE
+    if (request.url.includes('firebaseio.com')) {
+      // Ensure Firebase gets plain JSON without custom headers
+      return next.handle(request);
+    }
+
+    // Only encrypt POST / PATCH requests
     if (!request.body || (request.method !== 'POST' && request.method !== 'PATCH')) {
       return next.handle(request);
     }
@@ -33,10 +39,9 @@ export class HeaderInterceptor implements HttpInterceptor {
     const accept = 'application/json';
     const origin = environment.appDomain;
 
-    // This key is used to encrypt the body (backend decrypts with same logic)
     const requestKey = `${appAddress}${requestedat}${accept}${origin}`;
 
-    // Base headers — always sent
+    // Base headers for your backend
     const baseHeaders: Record<string, string> = {
       requestedat,
       appAddress,
@@ -46,27 +51,23 @@ export class HeaderInterceptor implements HttpInterceptor {
 
     let modifiedRequest = request;
 
-    // === ADD AUTH HEADERS ONLY IF USER IS AUTHENTICATED ===
+    // Auth headers
     if (this.authService.isAuthenticated) {
-      console.log('User authenticated → adding auth headers (a, c, d, i, t)');
-
       Object.assign(baseHeaders, {
-        a: this.authService.a || '',   // Address (email-based ID)
-        c: this.authService.c || '',   // Contract
-        d: this.authService.d || '',   // DOB proof
-        i: this.authService.i || '',   // IP address
-        t: this.authService.t || '',   // Auth timestamp
+        a: this.authService.a || '',
+        c: this.authService.c || '',
+        d: this.authService.d || '',
+        i: this.authService.i || '',
+        t: this.authService.t || '',
       });
-    } else {
-      console.log('User not authenticated → sending without auth headers');
     }
 
-    // Apply all headers
+    // Add headers
     modifiedRequest = request.clone({
       setHeaders: baseHeaders
     });
 
-    // === ENCRYPT BODY (even unauthenticated requests can be encrypted) ===
+    // Encrypt body
     try {
       const rawBody = typeof request.body === 'string'
         ? request.body
@@ -74,21 +75,9 @@ export class HeaderInterceptor implements HttpInterceptor {
 
       const encryptedBody = this.scriptService.encryptWithKey(requestKey, rawBody);
 
-      // Wrap encrypted data in { data: "..." } — this is what your backend expects
       modifiedRequest = modifiedRequest.clone({
         body: { data: encryptedBody }
       });
-
-      console.log('Encrypted request sent →', modifiedRequest.url);
-      if (this.authService.isAuthenticated) {
-        console.table({
-          a: this.authService.a,
-          c: this.authService.c,
-          d: this.authService.d?.substring(0, 16) + '...',
-          i: this.authService.i,
-          t: this.authService.t
-        });
-      }
 
     } catch (err: any) {
       console.error('Body encryption failed:', err);
