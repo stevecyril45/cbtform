@@ -54,7 +54,7 @@ export class ParticipantsService {
     return id 
       ? `${this.baseDbUrl}/${node}/${id}.json`
       : `${this.baseDbUrl}/${node}.json`;
-  }git remote add origin https://github.com/stevecyril45/cbtform.git
+  }
   saveRecord<T extends RecordBase>(node: string, record: T): Observable<any> {
     const data = { ...record, date: new Date().toISOString() };
     return this.http.post(this.getUrl(node), data);
